@@ -2,6 +2,7 @@ package eu.europa.ec.eudi.signer.r3.sca.Controllers;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.SignaturesSignDocReque
 import eu.europa.esig.dss.enumerations.MimeType;
 import eu.europa.esig.dss.model.DSSDocument;
 import jakarta.validation.Valid;
+
+import java.io.File;
+import java.io.IOException;
 
 @RestController
 @RequestMapping(value = "/signatures")
@@ -102,6 +106,9 @@ public class SignaturesController {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
             byte[] dataToBeSigned = null;
             if (document.getSignature_format().equals("C")) {
+                dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
+                document.getConformance_level(), document.getSigned_envelope_property(),
+                this.signingCertificate, new ArrayList<>());
                 System.out.println("Not Supported by current version");
             } else if (document.getSignature_format().equals("P")) {
                 System.out.print("PAdES\n");
@@ -155,6 +162,7 @@ public class SignaturesController {
                 e.printStackTrace();
             }
         }
+        List<String> DocumentWithSignature = new ArrayList<>();
 
         List<String> allSignaturesObjects = new ArrayList<>();
         for (SignaturesSignHashResponse response : allResponses) {
@@ -170,6 +178,12 @@ public class SignaturesController {
                 try {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                     docSigned.save("tests/exampleSigned.pdf");
+
+                    File file = new File("tests/exampleSigned.pdf");
+                    byte[] pdfBytes = Files.readAllBytes(file.toPath());
+
+                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -185,11 +199,11 @@ public class SignaturesController {
         }
 
         SignaturesSignDocResponse signDocResponse = new SignaturesSignDocResponse(
-                null,
+                DocumentWithSignature,
                 allSignaturesObjects,
                 null,
                 validationInfo);
-
+        
         return signDocResponse;
 
     }
