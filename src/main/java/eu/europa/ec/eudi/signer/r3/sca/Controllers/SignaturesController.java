@@ -106,10 +106,10 @@ public class SignaturesController {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
             byte[] dataToBeSigned = null;
             if (document.getSignature_format().equals("C")) {
+                System.out.print("CAdES\n");
                 dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
                 document.getConformance_level(), document.getSigned_envelope_property(),
                 this.signingCertificate, new ArrayList<>());
-                System.out.println("Not Supported by current version");
             } else if (document.getSignature_format().equals("P")) {
                 System.out.print("PAdES\n");
                 dataToBeSigned = dssClient.padesToBeSignedData(dssDocument,

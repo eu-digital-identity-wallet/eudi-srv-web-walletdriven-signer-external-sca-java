@@ -8,9 +8,14 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import eu.europa.esig.dss.AbstractSignatureParameters;
+import eu.europa.esig.dss.cades.CAdESSignatureParameters;
+import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSMessageDigest;
 import eu.europa.esig.dss.model.InMemoryDocument;
@@ -20,6 +25,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.signature.DocumentSignatureService;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 
@@ -36,6 +42,43 @@ public class DSS_Service {
     }
 
     // importante parameters: conformance_level, signed_envelope_property
+    @SuppressWarnings("rawtypes")
+    public byte[] cadesToBeSignedData (DSSDocument documentToSign, String string,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+        // DocumentSignatureService service = new CAdESService(cv);
+
+        // CAdESSignatureParameters parameters = new CAdESSignatureParameters();
+        // parameters.bLevel().setSigningDate(new Date());
+        // parameters.setGenerateTBSWithoutCertificate(true);
+        // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        // System.out.print("1CAdES\n");
+
+        // DigestDocument messageDigest = service.computeDocumentDigest(documentToSign, parameters);
+
+        CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        signatureParameters.setCertificateChain(certChainToken);
+        signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_B);
+        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+        // signatureParameters.setReason("DSS testing");
+        System.out.print("2CAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        CAdESService cmsForCAdESGenerationService  = new CAdESService(cv);
+        ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3CAdES\n");
+        return dataToSign.getBytes();
+
+    }
 
     public void xadesToBeSignedData(DSSDocument document, String conformance_level, String signed_envelope_property) {
 
