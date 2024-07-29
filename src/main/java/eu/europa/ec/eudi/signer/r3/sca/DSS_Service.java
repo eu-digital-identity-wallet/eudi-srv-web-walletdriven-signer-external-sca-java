@@ -13,6 +13,8 @@ import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.JWSSerializationType;
+import eu.europa.esig.dss.enumerations.SigDMechanism;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
@@ -23,6 +25,10 @@ import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.signature.XAdESService;
+import eu.europa.esig.dss.jades.JAdESSignatureParameters;
+import eu.europa.esig.dss.jades.signature.JAdESService;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
@@ -48,15 +54,6 @@ public class DSS_Service {
         List<X509Certificate> certificateChain) {
 
         CertificateVerifier cv = new CommonCertificateVerifier();
-        // DocumentSignatureService service = new CAdESService(cv);
-
-        // CAdESSignatureParameters parameters = new CAdESSignatureParameters();
-        // parameters.bLevel().setSigningDate(new Date());
-        // parameters.setGenerateTBSWithoutCertificate(true);
-        // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-        // System.out.print("1CAdES\n");
-
-        // DigestDocument messageDigest = service.computeDocumentDigest(documentToSign, parameters);
 
         CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
         signatureParameters.bLevel().setSigningDate(new Date());
@@ -69,7 +66,6 @@ public class DSS_Service {
         signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_B);
         signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
         signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
-        // signatureParameters.setReason("DSS testing");
         System.out.print("2CAdES\n");
 
         cv = new CommonCertificateVerifier();
@@ -79,12 +75,62 @@ public class DSS_Service {
         return dataToSign.getBytes();
 
     }
+    @SuppressWarnings("rawtypes")
+    public byte[] xadesToBeSignedData(DSSDocument documentToSign, String string,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain) {
 
-    public void xadesToBeSignedData(DSSDocument document, String conformance_level, String signed_envelope_property) {
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        XAdESSignatureParameters  signatureParameters = new XAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        signatureParameters.setCertificateChain(certChainToken);
+        signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_B);
+        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+        // signatureParameters.setReason("DSS testing");
+        System.out.print("2XAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        XAdESService cmsForXAdESGenerationService  = new XAdESService(cv);
+        ToBeSigned dataToSign = cmsForXAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3XAdES\n");
+        return dataToSign.getBytes();
 
     }
 
-    public void jadesToBeSignedData(DSSDocument document, String conformance_level, String signed_envelope_property) {
+    public byte[] jadesToBeSignedData (DSSDocument documentToSign, String string,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        JAdESSignatureParameters  signatureParameters = new JAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        signatureParameters.setCertificateChain(certChainToken);
+        signatureParameters.setJwsSerializationType(JWSSerializationType.JSON_SERIALIZATION);
+        signatureParameters.setSigDMechanism(SigDMechanism.OBJECT_ID_BY_URI_HASH);
+        signatureParameters.setSignatureLevel(SignatureLevel.JAdES_BASELINE_B);
+        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+        // signatureParameters.setReason("DSS testing");
+        System.out.print("2JAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        JAdESService cmsForXAdESGenerationService  = new JAdESService(cv);
+        ToBeSigned dataToSign = cmsForXAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3JAdES\n");
+        return dataToSign.getBytes();
 
     }
 
@@ -131,15 +177,9 @@ public class DSS_Service {
         signatureValue.setValue(signature);
 
         CertificateVerifier cv = new CommonCertificateVerifier();
-        ExternalCMSPAdESService service = new ExternalCMSPAdESService(cv);
-        PAdESSignatureParameters parameters = new PAdESSignatureParameters();
-        parameters.bLevel().setSigningDate(new Date());
-        parameters.setGenerateTBSWithoutCertificate(true);
-        parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-        parameters.setReason("DSS testing");
-        DSSMessageDigest messageDigest = service.getMessageDigest(documentToSign, parameters);
+        CAdESService service = new CAdESService(cv);
 
-        PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
+        CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
         signatureParameters.bLevel().setSigningDate(new Date());
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
         List<CertificateToken> certChainToken = new ArrayList<>();
@@ -147,20 +187,13 @@ public class DSS_Service {
             certChainToken.add(new CertificateToken(cert));
         }
         signatureParameters.setCertificateChain(certChainToken);
-        signatureParameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-        signatureParameters.setReason("DSS testing");
-
-        // stateless
-        cv = new CommonCertificateVerifier();
-        ExternalCMSService cmsForPAdESGenerationService = new ExternalCMSService(cv);
-        CMSSignedDocument cmsSignedDocument = cmsForPAdESGenerationService.signMessageDigest(messageDigest,
-                signatureParameters, signatureValue);
-        byte[] cmsSignedData = cmsSignedDocument.getBytes();
+        signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_B);
+        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
 
         // Stateless
-        service = new ExternalCMSPAdESService(cv);
-        service.setCmsSignedData(cmsSignedData);
-        return service.signDocument(documentToSign, signatureParameters, null);
+        service = new CAdESService(cv);
+        return service.signDocument(documentToSign, signatureParameters,signatureValue);
     }
 
     private static class ExternalCMSPAdESService extends PAdESService {

@@ -106,26 +106,32 @@ public class SignaturesController {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
             byte[] dataToBeSigned = null;
             if (document.getSignature_format().equals("C")) {
+                
                 System.out.print("CAdES\n");
                 dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
                 document.getConformance_level(), document.getSigned_envelope_property(),
                 this.signingCertificate, new ArrayList<>());
+
             } else if (document.getSignature_format().equals("P")) {
+
                 System.out.print("PAdES\n");
                 dataToBeSigned = dssClient.padesToBeSignedData(dssDocument,
                         document.getConformance_level(), document.getSigned_envelope_property(),
                         this.signingCertificate, new ArrayList<>());
                 System.out.println("Data To Be Signed Created");
             } else if (document.getSignature_format().equals("X")) {
-                System.out.print("XAdES: to be implemented");
-                return new SignaturesSignDocResponse();
-                // dssClient.xadesToBeSignedData(dssDocument, document.getConformance_level(),
-                // document.getSigned_envelope_property());
+
+                System.out.print("XAdES\n");
+                dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
+                document.getConformance_level(), document.getSigned_envelope_property(),
+                this.signingCertificate, new ArrayList<>());
+                
             } else if (document.getSignature_format().equals("J")) {
-                System.out.print("JAdES: to be implemented");
-                return new SignaturesSignDocResponse();
-                // dssClient.jadesToBeSignedData(dssDocument, document.getConformance_level(),
-                // document.getSigned_envelope_property());
+                System.out.print("JAdES\n");
+
+                dataToBeSigned = dssClient.jadesToBeSignedData(dssDocument,
+                document.getConformance_level(), document.getSigned_envelope_property(),
+                this.signingCertificate, new ArrayList<>());
             }
 
             if (dataToBeSigned == null) {
@@ -174,7 +180,6 @@ public class SignaturesController {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
                         new ArrayList<>());
-
                 try {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                     docSigned.save("tests/exampleSigned.pdf");
