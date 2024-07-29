@@ -38,6 +38,92 @@ import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 @Service
 public class DSS_Service {
 
+    public static SignatureLevel checkConformance_level(String conformance_level, char type) {
+        String enumValue = mapToEnumValue(conformance_level, type);
+        if (enumValue == null) {
+            return null;
+        }
+
+        try {
+            return SignatureLevel.valueByName(enumValue);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private static String mapToEnumValue(String conformance_level, char type) {
+        String prefix;
+        switch (type) {
+            case 'p':
+                prefix = "PAdES_BASELINE_";
+                break;
+            case 'c':
+                prefix = "CAdES_BASELINE_";
+                break;
+            case 'j':
+                prefix = "JAdES_BASELINE_";
+                break;
+            default:
+                return null;
+        }
+
+        switch (conformance_level) {
+            case "Ades-B-B":
+                return prefix + "B";
+            case "Ades-B-LT":
+                return prefix + "LT";
+            case "Ades-B-LTA":
+                return prefix + "LTA";
+            case "Ades-B-T":
+                return prefix + "T";
+            default:
+                return null;
+        }
+    }
+
+    private static SignatureAlgorithm checkSignAlg(String alg) {
+        switch (alg) {
+            case "1.2.840.113549.1.1.11":
+                return SignatureAlgorithm.RSA_SHA256;
+            case "1.2.840.113549.1.1.12":
+                return SignatureAlgorithm.RSA_SHA384;
+            case "1.2.840.113549.1.1.13":
+                return SignatureAlgorithm.RSA_SHA512;
+            default:
+                return null;
+        }
+    }
+
+    private static DigestAlgorithm checkSignAlgDigest(String alg) {
+        switch (alg) {
+            case "1.2.840.113549.1.1.11":
+                return DigestAlgorithm.SHA256;
+            case "1.2.840.113549.1.1.12":
+                return DigestAlgorithm.SHA384;
+            case "1.2.840.113549.1.1.13":
+                return DigestAlgorithm.SHA512;
+            default:
+                return null;
+        }
+    }
+
+    private static SignaturePackaging checkEnvProps(String env) {
+        switch (env) {
+            case "ENVELOPED":
+                return SignaturePackaging.ENVELOPED;
+            case "ENVELOPING":
+                return SignaturePackaging.ENVELOPING;
+            case "DETACHED":
+                return SignaturePackaging.DETACHED;
+            case "INTERNALLY_DETACHED":
+                return SignaturePackaging.INTERNALLY_DETACHED;
+            default:
+                return null;
+        }
+    }
+
     public DSSDocument loadDssDocument(String document) {
         byte[] dataDocument = Base64.getDecoder().decode(document);
         return new InMemoryDocument(dataDocument);
@@ -146,7 +232,10 @@ public class DSS_Service {
         PAdESSignatureParameters parameters = new PAdESSignatureParameters();
         parameters.bLevel().setSigningDate(new Date());
         parameters.setGenerateTBSWithoutCertificate(true);
-        parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+
+        SignatureLevel aux_conf_level = checkConformance_level(conformance_level, 'p');
+
+        parameters.setSignatureLevel(aux_conf_level);
         parameters.setReason("DSS testing");
 
         DSSMessageDigest messageDigest = service.getMessageDigest(documentToSign, parameters);
@@ -159,41 +248,94 @@ public class DSS_Service {
             certChainToken.add(new CertificateToken(cert));
         }
         signatureParameters.setCertificateChain(certChainToken);
-        signatureParameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        signatureParameters.setSignatureLevel(aux_conf_level);
         signatureParameters.setReason("DSS testing");
 
         cv = new CommonCertificateVerifier();
         ExternalCMSService cmsForPAdESGenerationService = new ExternalCMSService(cv);
         ToBeSigned dataToSign = cmsForPAdESGenerationService.getDataToSign(messageDigest, signatureParameters);
+        System.out.println("pades funcao 1 \n\n\n");
         return dataToSign.getBytes();
     }
 
     public DSSDocument getSignedDocument(DSSDocument documentToSign, byte[] signature,
             X509Certificate signingCertificate,
-            List<X509Certificate> certificateChain) {
+            List<X509Certificate> certificateChain, String signAlg, String sign_format, String conform_level, String envelope_props) {
 
         SignatureValue signatureValue = new SignatureValue();
-        signatureValue.setAlgorithm(SignatureAlgorithm.RSA_SHA256);
+        SignatureAlgorithm aux_alg = checkSignAlg(signAlg);
+        signatureValue.setAlgorithm(aux_alg);
         signatureValue.setValue(signature);
+        System.out.println("\n\n" + aux_alg + "\n\n\n");
 
         CertificateVerifier cv = new CommonCertificateVerifier();
-        CAdESService service = new CAdESService(cv);
 
-        CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
-        signatureParameters.bLevel().setSigningDate(new Date());
-        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
-        List<CertificateToken> certChainToken = new ArrayList<>();
-        for (X509Certificate cert : certificateChain) {
-            certChainToken.add(new CertificateToken(cert));
+        if (sign_format.equals("C")) {     
+            System.out.print("CAdES\n");
+            CAdESService service = new CAdESService(cv);
+            CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
+
+            signatureParameters.bLevel().setSigningDate(new Date());
+            signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+            List<CertificateToken> certChainToken = new ArrayList<>();
+            for (X509Certificate cert : certificateChain) {
+                certChainToken.add(new CertificateToken(cert));
+            }
+            signatureParameters.setCertificateChain(certChainToken);
+
+            SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'c');
+            System.out.println("\n\n" + aux_sign_level + "\n\n");
+            DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+            System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+            SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+            System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+            signatureParameters.setSignatureLevel(aux_sign_level);
+            signatureParameters.setDigestAlgorithm(aux_digest_alg);
+            signatureParameters.setSignaturePackaging(aux_sign_pack);
+
+            service = new CAdESService(cv);
+            return service.signDocument(documentToSign, signatureParameters,signatureValue);
+
+        } else if (sign_format.equals("P")) {
+            System.out.print("PAdES\n");
+            PAdESService service = new PAdESService(cv);
+            PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
+
+            signatureParameters.bLevel().setSigningDate(new Date());
+            signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+            List<CertificateToken> certChainToken = new ArrayList<>();
+            for (X509Certificate cert : certificateChain) {
+                certChainToken.add(new CertificateToken(cert));
+            }
+            signatureParameters.setCertificateChain(certChainToken);
+
+            SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'p');
+            System.out.println("\n\n" + aux_sign_level + "\n\n");
+            DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+            System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+            SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+            System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+            signatureParameters.setSignatureLevel(aux_sign_level);
+            signatureParameters.setDigestAlgorithm(aux_digest_alg);
+            signatureParameters.setSignaturePackaging(aux_sign_pack);
+            
+            service = new PAdESService(cv);
+            return service.signDocument(documentToSign, signatureParameters,signatureValue);
+
+        } else if (sign_format.equals("X")) {
+            System.out.print("XAdES\n");
+            
+        } else if (sign_format.equals("J")) {
+            System.out.print("JAdES\n");
+
         }
-        signatureParameters.setCertificateChain(certChainToken);
-        signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_B);
-        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
-        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+
+        System.out.println("\n\n null \n\n");
 
         // Stateless
-        service = new CAdESService(cv);
-        return service.signDocument(documentToSign, signatureParameters,signatureValue);
+        return null;
     }
 
     private static class ExternalCMSPAdESService extends PAdESService {

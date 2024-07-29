@@ -179,7 +179,8 @@ public class SignaturesController {
             if (response.getSignatures() != null) {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
-                        new ArrayList<>());
+                        new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
+                        document.getSigned_envelope_property());
                 try {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                     docSigned.save("tests/exampleSigned.pdf");
