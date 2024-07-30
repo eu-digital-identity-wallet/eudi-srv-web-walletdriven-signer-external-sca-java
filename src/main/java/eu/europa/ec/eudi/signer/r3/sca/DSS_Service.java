@@ -32,6 +32,8 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
+import eu.europa.esig.dss.jades.HTTPHeader;
+import eu.europa.esig.dss.jades.HTTPHeaderDigest;
 import eu.europa.esig.dss.jades.JAdESSignatureParameters;
 import eu.europa.esig.dss.jades.signature.JAdESService;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
@@ -386,11 +388,28 @@ public class DSS_Service {
         // signatureParameters.setReason("DSS testing");
         System.out.print("2JAdES\n");
 
-        cv = new CommonCertificateVerifier();
-        JAdESService cmsForXAdESGenerationService  = new JAdESService(cv);
-        ToBeSigned dataToSign = cmsForXAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
-        System.out.print("3JAdES\n");
-        return dataToSign.getBytes();
+        if(signed_envelope_property.equals("DETACHED")) {
+            System.out.println("\n\n JADES detached \n\n");
+            signatureParameters.setSigDMechanism(SigDMechanism.HTTP_HEADERS);
+            signatureParameters.setBase64UrlEncodedPayload(false);
+            List<DSSDocument> documentsToSign = new ArrayList<>();
+            documentsToSign.add(new HTTPHeader("content-type", "application/json"));
+            documentsToSign.add(new HTTPHeaderDigest(documentToSign, DigestAlgorithm.SHA256));
+            
+            cv = new CommonCertificateVerifier();
+            JAdESService cmsForJAdESGenerationService  = new JAdESService(cv);
+            ToBeSigned dataToSign = cmsForJAdESGenerationService.getDataToSign(documentsToSign, signatureParameters);
+            System.out.print("3JAdES\n");
+            return dataToSign.getBytes();
+        }
+        else {  
+            cv = new CommonCertificateVerifier();
+            JAdESService cmsForJAdESGenerationService  = new JAdESService(cv);
+            ToBeSigned dataToSign = cmsForJAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+            System.out.print("3JAdES\n");
+            return dataToSign.getBytes();
+        }
+
 
     }
 
@@ -668,9 +687,22 @@ public class DSS_Service {
             signatureParameters.setDigestAlgorithm(aux_digest_alg);
             signatureParameters.setSignaturePackaging(aux_sign_pack);
             signatureParameters.setJwsSerializationType(JWSSerializationType.COMPACT_SERIALIZATION);
+
+            if(envelope_props.equals("DETACHED")) {
+                System.out.println("\n\n JADES detached \n\n");
+                signatureParameters.setSigDMechanism(SigDMechanism.HTTP_HEADERS);
+                signatureParameters.setBase64UrlEncodedPayload(false);
+                List<DSSDocument> documentsToSign = new ArrayList<>();
+                documentsToSign.add(new HTTPHeader("content-type", "application/json"));
+                documentsToSign.add(new HTTPHeaderDigest(documentToSign, DigestAlgorithm.SHA256));
+                service = new JAdESService(cv);
+                return service.signDocument(documentsToSign, signatureParameters,signatureValue);
+            }
+            else {
+                service = new JAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+            }
             
-            service = new JAdESService(cv);
-            return service.signDocument(documentToSign, signatureParameters,signatureValue);
 
         }
 
