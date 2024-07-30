@@ -110,7 +110,7 @@ public class SignaturesController {
                 System.out.print("CAdES\n");
                 dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
                 document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>());
+                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
 
             } else if (document.getSignature_format().equals("P")) {
 
@@ -124,14 +124,14 @@ public class SignaturesController {
                 System.out.print("XAdES\n");
                 dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
                 document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>());
+                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
                 
             } else if (document.getSignature_format().equals("J")) {
                 System.out.print("JAdES\n");
 
                 dataToBeSigned = dssClient.jadesToBeSignedData(dssDocument,
                 document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>());
+                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
             }
 
             if (dataToBeSigned == null) {
@@ -182,13 +182,35 @@ public class SignaturesController {
                         new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
                         document.getSigned_envelope_property());
                 try {
-                    docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
-                    docSigned.save("tests/exampleSigned.pdf");
+                    if (document.getSignature_format().equals("J")) {
+                        System.out.println("\nJADES SIGN\n");
+                        docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
+                        docSigned.save("tests/exampleSigned.json");
 
-                    File file = new File("tests/exampleSigned.pdf");
-                    byte[] pdfBytes = Files.readAllBytes(file.toPath());
+                        File file = new File("tests/exampleSigned.json");
+                        byte[] jsonBytes = Files.readAllBytes(file.toPath());
 
-                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(jsonBytes));
+                    }
+                    else if (document.getSignature_format().equals("X")) {
+                        System.out.println("\nXADES SIGN\n");
+                        docSigned.setMimeType(MimeType.fromMimeTypeString("text/xml"));
+                        docSigned.save("tests/exampleSigned.xml");
+
+                        File file = new File("tests/exampleSigned.xml");
+                        byte[] xmlBytes = Files.readAllBytes(file.toPath());
+                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
+                    }
+                    else {
+                        System.out.println("\nOTHERS SIGN\n");
+                        docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
+                        docSigned.save("tests/exampleSigned.pdf");
+
+                        File file = new File("tests/exampleSigned.pdf");
+                        byte[] pdfBytes = Files.readAllBytes(file.toPath());
+
+                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
