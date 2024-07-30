@@ -108,9 +108,20 @@ public class SignaturesController {
             if (document.getSignature_format().equals("C")) {
                 
                 System.out.print("CAdES\n");
-                dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
-                document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                if(document.getContainer().equals("ASiC-E")) {
+                    dataToBeSigned = dssClient.cadesToBeSignedData_asic_E(dssDocument, document.getConformance_level(), 
+                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                }
+                else if(document.getContainer().equals("ASiC-S")) {
+                    dataToBeSigned = dssClient.cadesToBeSignedData_asic_S(dssDocument, document.getConformance_level(), 
+                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+
+                }
+                else {    
+                    dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
+                    document.getConformance_level(), document.getSigned_envelope_property(),
+                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                }
 
             } else if (document.getSignature_format().equals("P")) {
 
@@ -122,10 +133,20 @@ public class SignaturesController {
             } else if (document.getSignature_format().equals("X")) {
 
                 System.out.print("XAdES\n");
-                dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
-                document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
-                
+                if(document.getContainer().equals("ASiC-E")) {
+                    dataToBeSigned = dssClient.xadesToBeSignedData_asic_E(dssDocument, document.getConformance_level(), 
+                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                }
+                else if(document.getContainer().equals("ASiC-S")) {
+                    dataToBeSigned = dssClient.xadesToBeSignedData_asic_S(dssDocument, document.getConformance_level(), 
+                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+
+                }
+                else {
+                    dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
+                    document.getConformance_level(), document.getSigned_envelope_property(),
+                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                }
             } else if (document.getSignature_format().equals("J")) {
                 System.out.print("JAdES\n");
 
@@ -180,9 +201,35 @@ public class SignaturesController {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
                         new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
-                        document.getSigned_envelope_property());
+                        document.getSigned_envelope_property(), document.getContainer());
                 try {
-                    if (document.getSignature_format().equals("J")) {
+                    if (document.getContainer().equals("ASiC-E")) {
+                        if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
+                            System.out.println("\nASIC-E\n");
+                            docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-e+zip"));
+                            docSigned.save("tests/exampleSigned.cse");
+
+                            File file = new File("tests/exampleSigned.cse");
+                            byte[] pdfBytes = Files.readAllBytes(file.toPath());
+
+                            DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                        }
+
+                    }
+                    else if (document.getContainer().equals("ASiC-S")) {
+                        if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
+                            System.out.println("\nASIC-S\n");
+                            docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-s+zip"));
+                            docSigned.save("tests/exampleSigned.scs");
+
+                            File file = new File("tests/exampleSigned.scs");
+                            byte[] pdfBytes = Files.readAllBytes(file.toPath());
+
+                            DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                        }
+
+                    }
+                    else if (document.getSignature_format().equals("J")) {
                         System.out.println("\nJADES SIGN\n");
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
                         docSigned.save("tests/exampleSigned.json");

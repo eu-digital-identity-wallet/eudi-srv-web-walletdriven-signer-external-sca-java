@@ -86,6 +86,21 @@
 			<artifactId>validation-policy</artifactId>
             <version>6.0</version>
 		</dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-common</artifactId>
+            <version>6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-cades</artifactId>
+            <version>6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-xades</artifactId>
+            <version>6.0</version>
+        </dependency>
 	</dependencies>
 
 	<build>

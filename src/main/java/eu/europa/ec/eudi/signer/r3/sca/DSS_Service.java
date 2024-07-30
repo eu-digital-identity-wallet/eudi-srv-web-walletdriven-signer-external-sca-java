@@ -9,9 +9,14 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import eu.europa.esig.dss.AbstractSignatureParameters;
+import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
+import eu.europa.esig.dss.asic.cades.signature.ASiCWithCAdESService;
+import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
+import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
+import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.JWSSerializationType;
 import eu.europa.esig.dss.enumerations.SigDMechanism;
@@ -162,10 +167,83 @@ public class DSS_Service {
         signatureParameters.setSignatureLevel(aux_sign_level);
         signatureParameters.setDigestAlgorithm(aux_digest_alg);
         signatureParameters.setSignaturePackaging(aux_sign_pack);
+        
         System.out.print("2CAdES\n");
 
         cv = new CommonCertificateVerifier();
         CAdESService cmsForCAdESGenerationService  = new CAdESService(cv);
+        ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3CAdES\n");
+        return dataToSign.getBytes();
+
+    }
+    @SuppressWarnings("rawtypes")
+    public byte[] cadesToBeSignedData_asic_E(DSSDocument documentToSign, String conformance_level,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain, String signAlg) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        ASiCWithCAdESSignatureParameters signatureParameters = new ASiCWithCAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        
+        SignatureLevel aux_sign_level = checkConformance_level(conformance_level, 'c');
+        System.out.println("\n\n" + aux_sign_level + "\n\n");
+        DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+        System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+        SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
+        System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setDigestAlgorithm(aux_digest_alg);
+        signatureParameters.setSignaturePackaging(aux_sign_pack);
+        signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_E);
+        
+        System.out.print("2CAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        ASiCWithCAdESService cmsForCAdESGenerationService  = new ASiCWithCAdESService(cv);
+        ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3CAdES\n");
+        return dataToSign.getBytes();
+
+    }
+    @SuppressWarnings("rawtypes")
+    public byte[] cadesToBeSignedData_asic_S(DSSDocument documentToSign, String conformance_level,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain, String signAlg) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        ASiCWithCAdESSignatureParameters signatureParameters = new ASiCWithCAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        
+        SignatureLevel aux_sign_level = checkConformance_level(conformance_level, 'c');
+        System.out.println("\n\n" + aux_sign_level + "\n\n");
+        DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+        System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+        SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
+        System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setDigestAlgorithm(aux_digest_alg);
+        signatureParameters.setSignaturePackaging(aux_sign_pack);
+        signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_S);
+        
+        System.out.print("2CAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        ASiCWithCAdESService cmsForCAdESGenerationService  = new ASiCWithCAdESService(cv);
         ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
         System.out.print("3CAdES\n");
         return dataToSign.getBytes();
@@ -203,6 +281,78 @@ public class DSS_Service {
         cv = new CommonCertificateVerifier();
         XAdESService cmsForXAdESGenerationService  = new XAdESService(cv);
         ToBeSigned dataToSign = cmsForXAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3XAdES\n");
+        return dataToSign.getBytes();
+
+    }
+    @SuppressWarnings("rawtypes")
+    public byte[] xadesToBeSignedData_asic_E(DSSDocument documentToSign, String conformance_level,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain, String signAlg) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        ASiCWithXAdESSignatureParameters signatureParameters = new ASiCWithXAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        
+        SignatureLevel aux_sign_level = checkConformance_level(conformance_level, 'x');
+        System.out.println("\n\n" + aux_sign_level + "\n\n");
+        DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+        System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+        SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
+        System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setDigestAlgorithm(aux_digest_alg);
+        signatureParameters.setSignaturePackaging(aux_sign_pack);
+        signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_E);
+        
+        System.out.print("2XAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        ASiCWithXAdESService cmsForCAdESGenerationService  = new ASiCWithXAdESService(cv);
+        ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
+        System.out.print("3XAdES\n");
+        return dataToSign.getBytes();
+
+    }
+    @SuppressWarnings("rawtypes")
+    public byte[] xadesToBeSignedData_asic_S(DSSDocument documentToSign, String conformance_level,
+        String signed_envelope_property, X509Certificate signingCertificate,
+        List<X509Certificate> certificateChain, String signAlg) {
+
+        CertificateVerifier cv = new CommonCertificateVerifier();
+
+        ASiCWithXAdESSignatureParameters signatureParameters = new ASiCWithXAdESSignatureParameters();
+        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        List<CertificateToken> certChainToken = new ArrayList<>();
+        for (X509Certificate cert : certificateChain) {
+            certChainToken.add(new CertificateToken(cert));
+        }
+        
+        SignatureLevel aux_sign_level = checkConformance_level(conformance_level, 'x');
+        System.out.println("\n\n" + aux_sign_level + "\n\n");
+        DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+        System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+        SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
+        System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setDigestAlgorithm(aux_digest_alg);
+        signatureParameters.setSignaturePackaging(aux_sign_pack);
+        signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_S);
+        
+        System.out.print("2XAdES\n");
+
+        cv = new CommonCertificateVerifier();
+        ASiCWithXAdESService cmsForCAdESGenerationService  = new ASiCWithXAdESService(cv);
+        ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
         System.out.print("3XAdES\n");
         return dataToSign.getBytes();
 
@@ -284,7 +434,8 @@ public class DSS_Service {
 
     public DSSDocument getSignedDocument(DSSDocument documentToSign, byte[] signature,
             X509Certificate signingCertificate,
-            List<X509Certificate> certificateChain, String signAlg, String sign_format, String conform_level, String envelope_props) {
+            List<X509Certificate> certificateChain, String signAlg, String sign_format, String conform_level, String envelope_props,
+            String container) {
 
         SignatureValue signatureValue = new SignatureValue();
         SignatureAlgorithm aux_alg = checkSignAlg(signAlg);
@@ -294,32 +445,91 @@ public class DSS_Service {
 
         CertificateVerifier cv = new CommonCertificateVerifier();
 
-        if (sign_format.equals("C")) {     
-            System.out.print("CAdES\n");
-            CAdESService service = new CAdESService(cv);
-            CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
+        if (sign_format.equals("C")) {
+            if(container.equals("ASiC-E")) {
+                System.out.print("CAdES ASiC-E\n");
+                ASiCWithCAdESService service = new ASiCWithCAdESService(cv);
+                ASiCWithCAdESSignatureParameters signatureParameters = new ASiCWithCAdESSignatureParameters();
 
-            signatureParameters.bLevel().setSigningDate(new Date());
-            signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
-            List<CertificateToken> certChainToken = new ArrayList<>();
-            for (X509Certificate cert : certificateChain) {
-                certChainToken.add(new CertificateToken(cert));
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
+
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'c');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+                signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_E);
+
+                service = new ASiCWithCAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
             }
-            signatureParameters.setCertificateChain(certChainToken);
+            else if (container.equals("ASiC-S")) {
+                System.out.print("CAdES ASiC-S\n");
+                ASiCWithCAdESService service = new ASiCWithCAdESService(cv);
+                ASiCWithCAdESSignatureParameters signatureParameters = new ASiCWithCAdESSignatureParameters();
 
-            SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'c');
-            System.out.println("\n\n" + aux_sign_level + "\n\n");
-            DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
-            System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
-            SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
-            System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
 
-            signatureParameters.setSignatureLevel(aux_sign_level);
-            signatureParameters.setDigestAlgorithm(aux_digest_alg);
-            signatureParameters.setSignaturePackaging(aux_sign_pack);
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'c');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
 
-            service = new CAdESService(cv);
-            return service.signDocument(documentToSign, signatureParameters,signatureValue);
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+                signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_S);
+
+                service = new ASiCWithCAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+
+            }
+            else { 
+                System.out.print("CAdES\n");
+                CAdESService service = new CAdESService(cv);
+                CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
+
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
+
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'c');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+
+                service = new CAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+            }
 
         } else if (sign_format.equals("P")) {
             System.out.print("PAdES\n");
@@ -349,31 +559,90 @@ public class DSS_Service {
             return service.signDocument(documentToSign, signatureParameters,signatureValue);
 
         } else if (sign_format.equals("X")) {
-            System.out.print("XAdES\n");
-            XAdESService service = new XAdESService(cv);
-            XAdESSignatureParameters signatureParameters = new XAdESSignatureParameters();
+            if(container.equals("ASiC-E")) {
+                System.out.print("XAdES ASiC-E\n");
+                ASiCWithXAdESService service = new ASiCWithXAdESService(cv);
+                ASiCWithXAdESSignatureParameters signatureParameters = new ASiCWithXAdESSignatureParameters();
+                
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
 
-            signatureParameters.bLevel().setSigningDate(new Date());
-            signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
-            List<CertificateToken> certChainToken = new ArrayList<>();
-            for (X509Certificate cert : certificateChain) {
-                certChainToken.add(new CertificateToken(cert));
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'x');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+                signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_E);
+
+                service = new ASiCWithXAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
             }
-            signatureParameters.setCertificateChain(certChainToken);
+            else if (container.equals("ASiC-S")) {
+                System.out.print("XAdES ASiC-S\n");
+                ASiCWithXAdESService service = new ASiCWithXAdESService(cv);
+                ASiCWithXAdESSignatureParameters signatureParameters = new ASiCWithXAdESSignatureParameters();
 
-            SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'x');
-            System.out.println("\n\n" + aux_sign_level + "\n\n");
-            DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
-            System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
-            SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
-            System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
 
-            signatureParameters.setSignatureLevel(aux_sign_level);
-            signatureParameters.setDigestAlgorithm(aux_digest_alg);
-            signatureParameters.setSignaturePackaging(aux_sign_pack);
-            
-            service = new XAdESService(cv);
-            return service.signDocument(documentToSign, signatureParameters,signatureValue);
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'x');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+                signatureParameters.aSiC().setContainerType(ASiCContainerType.ASiC_S);
+
+                service = new ASiCWithXAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+
+            }
+            else {
+                System.out.print("XAdES\n");
+                XAdESService service = new XAdESService(cv);
+                XAdESSignatureParameters signatureParameters = new XAdESSignatureParameters();
+
+                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+                List<CertificateToken> certChainToken = new ArrayList<>();
+                for (X509Certificate cert : certificateChain) {
+                    certChainToken.add(new CertificateToken(cert));
+                }
+                signatureParameters.setCertificateChain(certChainToken);
+
+                SignatureLevel aux_sign_level = checkConformance_level(conform_level, 'x');
+                System.out.println("\n\n" + aux_sign_level + "\n\n");
+                DigestAlgorithm aux_digest_alg = checkSignAlgDigest(signAlg);
+                System.out.println( "\n\n" + aux_digest_alg + "\n\n\n");
+                SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
+                System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
+
+                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setDigestAlgorithm(aux_digest_alg);
+                signatureParameters.setSignaturePackaging(aux_sign_pack);
+                
+                service = new XAdESService(cv);
+                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+            }
             
         } else if (sign_format.equals("J")) {
             System.out.print("JAdES\n");
