@@ -63,6 +63,16 @@
         </dependency>
 		<dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-service</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-cades</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-xades</artifactId>
             <version>6.0</version>
         </dependency>

@@ -15,6 +15,7 @@ import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
 import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
+import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
 import eu.europa.esig.dss.enumerations.ASiCContainerType;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
@@ -25,11 +26,13 @@ import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSMessageDigest;
+import eu.europa.esig.dss.model.DigestDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.PAdESTimestampParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import eu.europa.esig.dss.jades.HTTPHeader;
@@ -38,6 +41,8 @@ import eu.europa.esig.dss.jades.JAdESSignatureParameters;
 import eu.europa.esig.dss.jades.signature.JAdESService;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
@@ -158,6 +163,7 @@ public class DSS_Service {
         for (X509Certificate cert : certificateChain) {
             certChainToken.add(new CertificateToken(cert));
         }
+        signatureParameters.setCertificateChain(certChainToken);
         
         SignatureLevel aux_sign_level = checkConformance_level(conformance_level, 'c');
         System.out.println("\n\n" + aux_sign_level + "\n\n");
@@ -166,14 +172,21 @@ public class DSS_Service {
         SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
         System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
 
-        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
         signatureParameters.setDigestAlgorithm(aux_digest_alg);
         signatureParameters.setSignaturePackaging(aux_sign_pack);
+        
+        signatureParameters.setGenerateTBSWithoutCertificate(true);
         
         System.out.print("2CAdES\n");
 
         cv = new CommonCertificateVerifier();
         CAdESService cmsForCAdESGenerationService  = new CAdESService(cv);
+        String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
+        OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
+        onlineTSPSource.setDataLoader(new TimestampDataLoader()); // uses the specific content-type
+        cmsForCAdESGenerationService.setTspSource(onlineTSPSource);
+
         ToBeSigned dataToSign = cmsForCAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
         System.out.print("3CAdES\n");
         return dataToSign.getBytes();
@@ -542,12 +555,23 @@ public class DSS_Service {
                 SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
                 System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
 
-                signatureParameters.setSignatureLevel(aux_sign_level);
+                signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
                 signatureParameters.setDigestAlgorithm(aux_digest_alg);
                 signatureParameters.setSignaturePackaging(aux_sign_pack);
+                signatureParameters.setGenerateTBSWithoutCertificate(true);
 
                 service = new CAdESService(cv);
-                return service.signDocument(documentToSign, signatureParameters,signatureValue);
+                System.out.println("teste");
+                String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
+                OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
+                onlineTSPSource.setDataLoader(new TimestampDataLoader()); // uses the specific content-type
+                service.setTspSource(onlineTSPSource);
+
+                DSSDocument signed_document= service.signDocument(documentToSign, signatureParameters,signatureValue);
+                System.out.println("teste2");
+
+
+                return signed_document;
             }
 
         } else if (sign_format.equals("P")) {

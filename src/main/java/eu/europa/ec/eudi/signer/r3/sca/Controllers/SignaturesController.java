@@ -196,12 +196,13 @@ public class SignaturesController {
 
             DocumentsSignDocRequest document = signDocRequest.getDocuments().get(0);
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
-
+            
             if (response.getSignatures() != null) {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
                         new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
                         document.getSigned_envelope_property(), document.getContainer());
+                        System.out.println(docSigned);
                 try {
                     if (document.getContainer().equals("ASiC-E")) {
                         if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
