@@ -147,7 +147,7 @@ public class SignaturesController {
                 else {
                     dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
                     document.getConformance_level(), document.getSigned_envelope_property(),
-                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo(), date);
                 }
             } else if (document.getSignature_format().equals("J")) {
                 System.out.print("JAdES\n");

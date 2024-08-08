@@ -34,6 +34,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.PAdESTimestampParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.XAdESTimestampParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import eu.europa.esig.dss.jades.HTTPHeader;
 import eu.europa.esig.dss.jades.HTTPHeaderDigest;
@@ -173,10 +174,10 @@ public class DSS_Service {
         SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
         System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
 
-        signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
+        signatureParameters.setSignatureLevel(aux_sign_level);
         signatureParameters.setDigestAlgorithm(aux_digest_alg);
         signatureParameters.setSignaturePackaging(aux_sign_pack);
-        CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(DigestAlgorithm.SHA256);
+        CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(aux_digest_alg);
         signatureParameters.setSignatureTimestampParameters(timestampParameters);
         signatureParameters.setArchiveTimestampParameters(timestampParameters);
         signatureParameters.setContentTimestampParameters(timestampParameters);
@@ -271,12 +272,12 @@ public class DSS_Service {
     @SuppressWarnings("rawtypes")
     public byte[] xadesToBeSignedData(DSSDocument documentToSign, String conformance_level,
         String signed_envelope_property, X509Certificate signingCertificate,
-        List<X509Certificate> certificateChain, String signAlg) {
+        List<X509Certificate> certificateChain, String signAlg, Date date) {
 
         CertificateVerifier cv = new CommonCertificateVerifier();
 
         XAdESSignatureParameters  signatureParameters = new XAdESSignatureParameters();
-        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.bLevel().setSigningDate(date);
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
         List<CertificateToken> certChainToken = new ArrayList<>();
         for (X509Certificate cert : certificateChain) {
@@ -291,14 +292,25 @@ public class DSS_Service {
         SignaturePackaging aux_sign_pack = checkEnvProps(signed_envelope_property);
         System.out.println("\n\n SIGN PACK: " + aux_sign_pack + "\n\n\n");
 
-        signatureParameters.setSignatureLevel(SignatureLevel.XAdES_BASELINE_B);
-        signatureParameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
-        signatureParameters.setSignaturePackaging(SignaturePackaging.DETACHED);
+        signatureParameters.setSignatureLevel(aux_sign_level);
+        signatureParameters.setDigestAlgorithm(aux_digest_alg);
+        signatureParameters.setSignaturePackaging(aux_sign_pack);
+        XAdESTimestampParameters timestampParameters= new XAdESTimestampParameters(aux_digest_alg);
+        signatureParameters.setSignatureTimestampParameters(timestampParameters);
+        signatureParameters.setArchiveTimestampParameters(timestampParameters);
+        signatureParameters.setContentTimestampParameters(timestampParameters);
+
+
         // signatureParameters.setReason("DSS testing");
         System.out.print("2XAdES\n");
 
         cv = new CommonCertificateVerifier();
         XAdESService cmsForXAdESGenerationService  = new XAdESService(cv);
+        String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
+        OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
+        onlineTSPSource.setDataLoader(new TimestampDataLoader()); // uses the specific content-type
+        cmsForXAdESGenerationService.setTspSource(onlineTSPSource);
+     
         ToBeSigned dataToSign = cmsForXAdESGenerationService.getDataToSign(documentToSign, signatureParameters);
         System.out.print("3XAdES\n");
         return dataToSign.getBytes();
@@ -559,10 +571,10 @@ public class DSS_Service {
                 SignaturePackaging aux_sign_pack = checkEnvProps(envelope_props);
                 System.out.println("\n\n" + aux_sign_pack + "\n\n\n");
 
-                signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
+                signatureParameters.setSignatureLevel(aux_sign_level);
                 signatureParameters.setDigestAlgorithm(aux_digest_alg);
                 signatureParameters.setSignaturePackaging(aux_sign_pack);
-                CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(DigestAlgorithm.SHA256);
+                CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(aux_digest_alg);
                 signatureParameters.setSignatureTimestampParameters(timestampParameters);
                 signatureParameters.setArchiveTimestampParameters(timestampParameters);
                 signatureParameters.setContentTimestampParameters(timestampParameters);
@@ -672,7 +684,7 @@ public class DSS_Service {
                 XAdESService service = new XAdESService(cv);
                 XAdESSignatureParameters signatureParameters = new XAdESSignatureParameters();
 
-                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.bLevel().setSigningDate(date);
                 signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
                 List<CertificateToken> certChainToken = new ArrayList<>();
                 for (X509Certificate cert : certificateChain) {
@@ -690,8 +702,19 @@ public class DSS_Service {
                 signatureParameters.setSignatureLevel(aux_sign_level);
                 signatureParameters.setDigestAlgorithm(aux_digest_alg);
                 signatureParameters.setSignaturePackaging(aux_sign_pack);
+                XAdESTimestampParameters timestampParameters= new XAdESTimestampParameters(aux_digest_alg);
+                signatureParameters.setSignatureTimestampParameters(timestampParameters);
+                signatureParameters.setArchiveTimestampParameters(timestampParameters);
+                signatureParameters.setContentTimestampParameters(timestampParameters);
                 
+
                 service = new XAdESService(cv);
+                System.out.println("teste");
+                String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
+                OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
+                onlineTSPSource.setDataLoader(new TimestampDataLoader()); // uses the specific content-type
+                service.setTspSource(onlineTSPSource);
+
                 return service.signDocument(documentToSign, signatureParameters,signatureValue);
             }
             
