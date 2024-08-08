@@ -7,6 +7,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +103,7 @@ public class SignaturesController {
         // if signature_format == J => signed_envelope_property = Attached
 
         List<SignaturesSignHashResponse> allResponses = new ArrayList<>();
+        Date date = new Date();
         for (DocumentsSignDocRequest document : signDocRequest.getDocuments()) {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
             byte[] dataToBeSigned = null;
@@ -120,7 +122,7 @@ public class SignaturesController {
                 else {    
                     dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
                     document.getConformance_level(), document.getSigned_envelope_property(),
-                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo(), date);
                 }
 
             } else if (document.getSignature_format().equals("P")) {
@@ -201,7 +203,7 @@ public class SignaturesController {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
                         new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
-                        document.getSigned_envelope_property(), document.getContainer());
+                        document.getSigned_envelope_property(), document.getContainer(), date);
                         System.out.println(docSigned);
                 try {
                     if (document.getContainer().equals("ASiC-E")) {

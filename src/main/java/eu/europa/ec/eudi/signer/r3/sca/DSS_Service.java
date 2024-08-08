@@ -152,12 +152,13 @@ public class DSS_Service {
     @SuppressWarnings("rawtypes")
     public byte[] cadesToBeSignedData (DSSDocument documentToSign, String conformance_level,
         String signed_envelope_property, X509Certificate signingCertificate,
-        List<X509Certificate> certificateChain, String signAlg) {
+        List<X509Certificate> certificateChain, String signAlg, Date date) {
 
         CertificateVerifier cv = new CommonCertificateVerifier();
 
         CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
-        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.bLevel().setSigningDate(date);
+        System.out.println(new Date());
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
         List<CertificateToken> certChainToken = new ArrayList<>();
         for (X509Certificate cert : certificateChain) {
@@ -175,8 +176,11 @@ public class DSS_Service {
         signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
         signatureParameters.setDigestAlgorithm(aux_digest_alg);
         signatureParameters.setSignaturePackaging(aux_sign_pack);
+        CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(DigestAlgorithm.SHA256);
+        signatureParameters.setSignatureTimestampParameters(timestampParameters);
+        signatureParameters.setArchiveTimestampParameters(timestampParameters);
+        signatureParameters.setContentTimestampParameters(timestampParameters);
         
-        signatureParameters.setGenerateTBSWithoutCertificate(true);
         
         System.out.print("2CAdES\n");
 
@@ -467,7 +471,7 @@ public class DSS_Service {
     public DSSDocument getSignedDocument(DSSDocument documentToSign, byte[] signature,
             X509Certificate signingCertificate,
             List<X509Certificate> certificateChain, String signAlg, String sign_format, String conform_level, String envelope_props,
-            String container) {
+            String container, Date  date) {
 
         SignatureValue signatureValue = new SignatureValue();
         SignatureAlgorithm aux_alg = checkSignAlg(signAlg);
@@ -540,7 +544,7 @@ public class DSS_Service {
                 CAdESService service = new CAdESService(cv);
                 CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
 
-                signatureParameters.bLevel().setSigningDate(new Date());
+                signatureParameters.bLevel().setSigningDate(date);
                 signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
                 List<CertificateToken> certChainToken = new ArrayList<>();
                 for (X509Certificate cert : certificateChain) {
@@ -558,7 +562,11 @@ public class DSS_Service {
                 signatureParameters.setSignatureLevel(SignatureLevel.CAdES_BASELINE_T);
                 signatureParameters.setDigestAlgorithm(aux_digest_alg);
                 signatureParameters.setSignaturePackaging(aux_sign_pack);
-                signatureParameters.setGenerateTBSWithoutCertificate(true);
+                CAdESTimestampParameters timestampParameters= new CAdESTimestampParameters(DigestAlgorithm.SHA256);
+                signatureParameters.setSignatureTimestampParameters(timestampParameters);
+                signatureParameters.setArchiveTimestampParameters(timestampParameters);
+                signatureParameters.setContentTimestampParameters(timestampParameters);
+                
 
                 service = new CAdESService(cv);
                 System.out.println("teste");
