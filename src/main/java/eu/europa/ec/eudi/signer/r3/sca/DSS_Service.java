@@ -6,9 +6,12 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
 
 import eu.europa.esig.dss.AbstractSignatureParameters;
+import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
+import eu.europa.esig.dss.alert.LogOnStatusAlert;
 import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
 import eu.europa.esig.dss.asic.cades.signature.ASiCWithCAdESService;
 import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
@@ -42,11 +45,20 @@ import eu.europa.esig.dss.jades.JAdESSignatureParameters;
 import eu.europa.esig.dss.jades.signature.JAdESService;
 import eu.europa.esig.dss.pades.signature.ExternalCMSService;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.service.SecureRandomNonceSource;
+import eu.europa.esig.dss.service.crl.OnlineCRLSource;
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
+import eu.europa.esig.dss.service.http.commons.OCSPDataLoader;
 import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.signature.DocumentSignatureService;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
+import eu.europa.esig.dss.validation.RevocationDataVerifier;
 
 @Service
 public class DSS_Service {
@@ -161,9 +173,15 @@ public class DSS_Service {
         signatureParameters.bLevel().setSigningDate(date);
         System.out.println(new Date());
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
+        // certificateChain.add(signingCertificate);
         List<CertificateToken> certChainToken = new ArrayList<>();
         for (X509Certificate cert : certificateChain) {
             certChainToken.add(new CertificateToken(cert));
+        }
+
+        CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+        for (CertificateToken certificateToken : certChainToken) {
+            certificateSource.addCertificate(certificateToken);
         }
         signatureParameters.setCertificateChain(certChainToken);
         
@@ -181,11 +199,47 @@ public class DSS_Service {
         signatureParameters.setSignatureTimestampParameters(timestampParameters);
         signatureParameters.setArchiveTimestampParameters(timestampParameters);
         signatureParameters.setContentTimestampParameters(timestampParameters);
+        signatureParameters.setGenerateTBSWithoutCertificate(true);
         
         
         System.out.print("2CAdES\n");
 
-        cv = new CommonCertificateVerifier();
+        cv.setTrustedCertSources(certificateSource);
+        cv.setRevocationDataVerifier(RevocationDataVerifier.createDefaultRevocationDataVerifier());
+        cv.setCheckRevocationForUntrustedChains(true);
+        // Capability to download resources from AIA
+        cv.setAIASource(new DefaultAIASource());
+
+        OnlineCRLSource onlineCRLSource = new OnlineCRLSource();
+        onlineCRLSource.setDataLoader(new CommonsDataLoader());
+        cv.setCrlSource(onlineCRLSource);
+
+        OnlineOCSPSource onlineOCSPSource = new OnlineOCSPSource();
+        onlineOCSPSource.setDataLoader(new OCSPDataLoader());
+        onlineOCSPSource.setNonceSource(new SecureRandomNonceSource());
+        cv.setOcspSource(onlineOCSPSource);
+
+        cv.setDefaultDigestAlgorithm(DigestAlgorithm.SHA256);
+        cv.setAlertOnMissingRevocationData(new ExceptionOnStatusAlert());
+
+        cv.setAlertOnUncoveredPOE(new LogOnStatusAlert(Level.WARN));
+
+        cv.setAlertOnRevokedCertificate(new ExceptionOnStatusAlert());
+
+        cv.setAlertOnInvalidTimestamp(new ExceptionOnStatusAlert());
+
+        cv.setAlertOnNoRevocationAfterBestSignatureTime(new LogOnStatusAlert(Level.ERROR));
+
+        cv.setAlertOnExpiredSignature(new ExceptionOnStatusAlert());
+
+        cv.setRevocationDataLoadingStrategyFactory(new OCSPFirstRevocationDataLoadingStrategyFactory());
+
+        RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
+        cv.setRevocationDataVerifier(revocationDataVerifier);
+
+        cv.setRevocationFallback(false);
+
+
         CAdESService cmsForCAdESGenerationService  = new CAdESService(cv);
         String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
         OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
@@ -553,14 +607,19 @@ public class DSS_Service {
             }
             else { 
                 System.out.print("CAdES\n");
-                CAdESService service = new CAdESService(cv);
+                
                 CAdESSignatureParameters signatureParameters = new CAdESSignatureParameters();
 
                 signatureParameters.bLevel().setSigningDate(date);
                 signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
                 List<CertificateToken> certChainToken = new ArrayList<>();
+                // certificateChain.add(signingCertificate);
                 for (X509Certificate cert : certificateChain) {
                     certChainToken.add(new CertificateToken(cert));
+                }
+                CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+                for (CertificateToken certificateToken : certChainToken) {
+                    certificateSource.addCertificate(certificateToken);
                 }
                 signatureParameters.setCertificateChain(certChainToken);
 
@@ -578,9 +637,44 @@ public class DSS_Service {
                 signatureParameters.setSignatureTimestampParameters(timestampParameters);
                 signatureParameters.setArchiveTimestampParameters(timestampParameters);
                 signatureParameters.setContentTimestampParameters(timestampParameters);
-                
+                signatureParameters.setGenerateTBSWithoutCertificate(true);
 
-                service = new CAdESService(cv);
+                cv.setTrustedCertSources(certificateSource);
+                cv.setRevocationDataVerifier(RevocationDataVerifier.createDefaultRevocationDataVerifier());
+                cv.setCheckRevocationForUntrustedChains(false);
+                // Capability to download resources from AIA
+                cv.setAIASource(new DefaultAIASource());
+        
+                OnlineCRLSource onlineCRLSource = new OnlineCRLSource();
+                onlineCRLSource.setDataLoader(new CommonsDataLoader());
+                cv.setCrlSource(onlineCRLSource);
+        
+                OnlineOCSPSource onlineOCSPSource = new OnlineOCSPSource();
+                onlineOCSPSource.setDataLoader(new OCSPDataLoader());
+                onlineOCSPSource.setNonceSource(new SecureRandomNonceSource());
+                cv.setOcspSource(onlineOCSPSource);
+
+                cv.setDefaultDigestAlgorithm(DigestAlgorithm.SHA256);
+                cv.setAlertOnMissingRevocationData(new ExceptionOnStatusAlert());
+        
+                cv.setAlertOnUncoveredPOE(new LogOnStatusAlert(Level.WARN));
+        
+                cv.setAlertOnRevokedCertificate(new ExceptionOnStatusAlert());
+        
+                cv.setAlertOnInvalidTimestamp(new ExceptionOnStatusAlert());
+        
+                cv.setAlertOnNoRevocationAfterBestSignatureTime(new LogOnStatusAlert(Level.ERROR));
+        
+                cv.setAlertOnExpiredSignature(new ExceptionOnStatusAlert());
+        
+                cv.setRevocationDataLoadingStrategyFactory(new OCSPFirstRevocationDataLoadingStrategyFactory());
+        
+                RevocationDataVerifier revocationDataVerifier = RevocationDataVerifier.createDefaultRevocationDataVerifier();
+                cv.setRevocationDataVerifier(revocationDataVerifier);
+        
+                cv.setRevocationFallback(false);
+
+                CAdESService service = new CAdESService(cv);
                 System.out.println("teste");
                 String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
                 OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
