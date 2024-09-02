@@ -1,6 +1,7 @@
 package eu.europa.ec.eudi.signer.r3.sca.Controllers;
 
 import eu.europa.ec.eudi.signer.r3.sca.DTO.AuthRequestTemporary;
+import eu.europa.ec.eudi.signer.r3.sca.DTO.AuthResponseTemporary;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.OAuth2AuthorizeRequest;
 import eu.europa.ec.eudi.signer.r3.sca.QtspClient;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,8 +46,8 @@ public class OAuth2Controller {
         return code_challenge;
     }
 
-    @GetMapping(value = "/authorize")
-    public void credential_authorization() throws Exception{
+    @GetMapping(value = "/authorize", produces = "application/json")
+    public AuthResponseTemporary credential_authorization() throws Exception{
         System.out.println("Authorize: -----------------------------");
         String qtspUrl = "http://localhost:9000";
 
@@ -70,11 +71,12 @@ public class OAuth2Controller {
         authorizeRequest.setHashes("some_document_hash");
         authorizeRequest.setHashAlgorithmOID("2.16.840.1.101.3.4.2.1");
 
-        this.qtspClient.requestOAuth2Authorize(qtspUrl, authorizeRequest);
+        AuthResponseTemporary responseTemporary = this.qtspClient.requestOAuth2Authorize(qtspUrl, authorizeRequest);
         System.out.println("-----------------------------");
+        return responseTemporary;
     }
 
-    @GetMapping("/temporary")
+    /*@GetMapping("/temporary")
     public void temporary(@RequestBody AuthRequestTemporary authRequest) throws Exception{
         System.out.println("Temporary: -----------------------------");
 
@@ -111,16 +113,15 @@ public class OAuth2Controller {
             HttpResponse followResponse = httpClient2.execute(followRequest);
             // System.out.println(followResponse.getStatusLine().getStatusCode());
         }
-    }
-
+    }*/
 
     private static String getBasicAuthenticationHeader(String username, String password) {
         String valueToEncode = username + ":" + password;
         return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes());
     }
 
-    @GetMapping(value="/oauth/login/code")
-    public void credential_authorization_code(HttpServletRequest request) throws Exception{
+    @GetMapping(value="/oauth/login/code", produces="application/json")
+    public String credential_authorization_code(HttpServletRequest request) throws Exception{
         System.out.println("Login Code: -----------------------------");
 
         String code_verifier = "root";
@@ -167,9 +168,10 @@ public class OAuth2Controller {
 
                 JSONObject json = new JSONObject(responseString);
                 System.out.println(json);
+
+                return responseString;
             }
-
         }
-
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package eu.europa.ec.eudi.signer.r3.sca;
 
+import eu.europa.ec.eudi.signer.r3.sca.DTO.AuthResponseTemporary;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.OAuth2AuthorizeRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignaturesSignHashRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignaturesSignHashResponse;
@@ -102,7 +103,7 @@ public class QtspClient {
         return signHashResponse.block();
     }
 
-    public void requestOAuth2Authorize(String url, OAuth2AuthorizeRequest authorizeRequest)
+    public AuthResponseTemporary requestOAuth2Authorize(String url, OAuth2AuthorizeRequest authorizeRequest)
             throws Exception {
 
         try(CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
@@ -141,7 +142,10 @@ public class QtspClient {
                 System.out.println("Location: " + location);
                 String cookie = response.getLastHeader("Set-Cookie").getValue();
                 System.out.println("Cookie: " + cookie);
+                return new AuthResponseTemporary(location, cookie);
             }
+
+            return null;
         }
     }
 
