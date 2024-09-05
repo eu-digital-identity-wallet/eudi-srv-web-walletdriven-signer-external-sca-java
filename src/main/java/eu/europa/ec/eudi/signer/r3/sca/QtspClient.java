@@ -1,10 +1,14 @@
 package eu.europa.ec.eudi.signer.r3.sca;
 
 import eu.europa.ec.eudi.signer.r3.sca.DTO.AuthResponseTemporary;
+import eu.europa.ec.eudi.signer.r3.sca.DTO.CredentialsInfo.CredentialsInfoRequest;
+import eu.europa.ec.eudi.signer.r3.sca.DTO.CredentialsInfo.CredentialsInfoResponse;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.OAuth2AuthorizeRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignaturesSignHashRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignaturesSignHashResponse;
 import java.util.Optional;
+
+import jdk.jfr.ContentType;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -76,11 +80,13 @@ public class QtspClient {
      * 
      */
 
-    public SignaturesSignHashResponse requestSignHash(String url, SignaturesSignHashRequest signHashRequest)
+    public SignaturesSignHashResponse requestSignHash(String url, SignaturesSignHashRequest signHashRequest, String authorizationBearerHeader)
             throws Exception {
         // TODO: missing headers!
 
-        System.out.println(signHashRequest.toString());
+        System.out.println("url: "+url);
+        System.out.println("body: "+signHashRequest.toString());
+        System.out.println("header: "+authorizationBearerHeader);
 
         WebClient webClient = WebClient.builder()
                 .baseUrl(url)
@@ -91,7 +97,7 @@ public class QtspClient {
         Mono<SignaturesSignHashResponse> signHashResponse = webClient.post()
                 .uri("/csc/v2/signatures/signHash")
                 .bodyValue(signHashRequest)
-                .header("Authorization", "")
+                .header("Authorization", authorizationBearerHeader)
                 .exchangeToMono(response -> {
                     if (response.statusCode().equals(HttpStatus.OK)) {
                         return response.bodyToMono(SignaturesSignHashResponse.class);
@@ -103,7 +109,7 @@ public class QtspClient {
         return signHashResponse.block();
     }
 
-    public AuthResponseTemporary requestOAuth2Authorize(String url, OAuth2AuthorizeRequest authorizeRequest)
+    public AuthResponseTemporary requestOAuth2Authorize(String url, OAuth2AuthorizeRequest authorizeRequest, String authorizationBearerHeader)
             throws Exception {
 
         try(CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
@@ -149,7 +155,33 @@ public class QtspClient {
         }
     }
 
+    public CredentialsInfoResponse requestCredentialInfo(String url, CredentialsInfoRequest credentialsInfoRequest, String authorizationBearerHeader){
+        WebClient webClient = WebClient.builder()
+              .baseUrl(url)
+              .defaultCookie("cookieKey", "cookieValue")
+              .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+              .build();
 
+        System.out.println("url: "+url);
+        System.out.println("body: "+credentialsInfoRequest);
+        System.out.println("header: "+authorizationBearerHeader);
+
+        Mono<CredentialsInfoResponse> signHashResponse = webClient.post()
+              .uri("/csc/v2/credentials/info")
+              .bodyValue(credentialsInfoRequest)
+              .header("Authorization", authorizationBearerHeader)
+
+              .exchangeToMono(response -> {
+                  if (response.statusCode().equals(HttpStatus.OK)) {
+                      return response.bodyToMono(CredentialsInfoResponse.class);
+                  } else {
+                      System.out.println(response.statusCode().value());
+                      return Mono.error(new Exception("Exception"));
+                  }
+              });
+
+        return signHashResponse.block();
+    }
 
 
 

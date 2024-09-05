@@ -6,6 +6,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import org.springframework.stereotype.Service;
 
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
@@ -59,6 +60,7 @@ public class DSS_Service {
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         parameters.setReason("DSS testing");
+        parameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
 
         DSSMessageDigest messageDigest = service.getMessageDigest(documentToSign, parameters);
 

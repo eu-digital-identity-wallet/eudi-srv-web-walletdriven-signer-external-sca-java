@@ -10,10 +10,7 @@ import java.util.Base64;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import eu.europa.ec.eudi.signer.r3.sca.DSS_Service;
 import eu.europa.ec.eudi.signer.r3.sca.QtspClient;
@@ -33,15 +30,14 @@ import java.io.File;
 @RequestMapping(value = "/signatures")
 public class SignaturesController {
 
-    @Autowired
-    private QtspClient qtspClient;
+    private final QtspClient qtspClient;
+    private final DSS_Service dssClient;
+    private final X509Certificate signingCertificate;
 
-    @Autowired
-    private DSS_Service dssClient;
+    public SignaturesController(@Autowired DSS_Service dssClient, @Autowired QtspClient qtspClient) throws Exception {
+        this.dssClient = dssClient;
+        this.qtspClient = qtspClient;
 
-    private X509Certificate signingCertificate;
-
-    public SignaturesController() throws Exception {
         byte[] cert_bytes = Base64.getDecoder().decode(
                 "MIIBuzCCASSgAwIBAgIGAY/zF0AhMA0GCSqGSIb3DQEBCwUAMBYxFDASBgNVBAMMC2lzc3Vlcl90ZXN0MB4XDTI0MDYwNzE0MjUzOFoXDTI1MDYwNzE0MjUzOFowFzEVMBMGA1UEAwwMc3ViamVjdF90ZXN0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCseUUmD8+Okuh5OrLT2LyO6QCNOIidohV7HAjIbgdpSU1C27z+JDWT3cfVbojQ5EzvZM9CDPayHrlnNK8NFD9ggE3rbOn6ATT9iC4qTQvPN3Sdel5OTaVabMuMT2satwbtl8wB98583i4bhJUyHRy7PJnXrOCscyK14GjGnuVwjQIDAQABoxMwETAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBACWKec1JiRggmTRm0aQin3SJnsvuF8JS5GlOpea45IGV2gOHws/iFPg8BAaGzQ1d+sG+RHH07xKCll8Xw1QaqLhc+96vNOCvl2cjl7BdLH/fiYurP8Vf0W3lkp5VbRFV2nWwHcOIPBUa8lNK+uV6Z5nPG5Ads12BJD5K8jAHXo2E");
 
@@ -53,16 +49,19 @@ public class SignaturesController {
     }
 
     @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
-    public SignaturesSignDocResponse signDoc(@Valid @RequestBody SignaturesSignDocRequest signDocRequest) {
+    public SignaturesSignDocResponse signDoc(@Valid @RequestBody SignaturesSignDocRequest signDocRequest,
+                                             @RequestHeader (name="Authorization") String authorizationBearerHeader) {
 
         System.out.println(signDocRequest);
+        System.out.println(authorizationBearerHeader);
         String url = signDocRequest.getRequest_uri();
+        System.out.println(url);
         if (signDocRequest.getCredentialID() == null) {
             System.out.println("To be defined: CredentialID needs to be defined in this implementation.");
             return new SignaturesSignDocResponse();
         }
 
-        if (signDocRequest.getSAD() == null) {
+        if (signDocRequest.getSAD() == null && authorizationBearerHeader == null) {
             System.out.println(
                     "To be defined: the current solution expects the credential token to be sent in the SAD.");
             return new SignaturesSignDocResponse();
@@ -75,7 +74,7 @@ public class SignaturesController {
 
         if (signDocRequest.getDocuments() != null) {
             try {
-                return handleDocumentsSignDocRequest(signDocRequest, url);
+                return handleDocumentsSignDocRequest(signDocRequest, url, authorizationBearerHeader);
             } catch (Exception e) {
 
             }
@@ -83,7 +82,7 @@ public class SignaturesController {
 
         if (signDocRequest.getDocumentDigests() != null) {
             try {
-                return handleDocumentDigestsSignDocRequest(signDocRequest, url);
+                return handleDocumentDigestsSignDocRequest(signDocRequest, url, authorizationBearerHeader);
             } catch (Exception e) {
             }
         }
@@ -92,7 +91,7 @@ public class SignaturesController {
     }
 
     // i need the signing certificate before hand
-    public SignaturesSignDocResponse handleDocumentsSignDocRequest(SignaturesSignDocRequest signDocRequest, String url)
+    public SignaturesSignDocResponse handleDocumentsSignDocRequest(SignaturesSignDocRequest signDocRequest, String url, String authorizationBearerHeader)
             throws Exception {
 
         // if signature_format == C => signed_envelope_property = Attached
@@ -153,7 +152,7 @@ public class SignaturesController {
 
             try {
                 System.out.println("HTTP Request to QTSP.");
-                SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest);
+                SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest, authorizationBearerHeader);
                 System.out.println("HTTP Response received.");
                 allResponses.add(signHashResponse);
                 System.out.println(signHashResponse.toString());
@@ -208,7 +207,7 @@ public class SignaturesController {
     }
 
     public SignaturesSignDocResponse handleDocumentDigestsSignDocRequest(SignaturesSignDocRequest signDocRequest,
-            String url)
+            String url, String authorizationBearerHeader)
             throws Exception {
 
         // for each document digests....
@@ -226,7 +225,7 @@ public class SignaturesController {
                     signDocRequest.getResponse_uri(),
                     signDocRequest.getClientData());
 
-            SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest);
+            SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest, authorizationBearerHeader);
             allResponses.add(signHashResponse);
         }
 
