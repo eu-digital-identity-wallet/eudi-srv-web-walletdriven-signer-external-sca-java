@@ -55,11 +55,14 @@ public class DSS_Service {
 
         System.out.println(documentToSign.getName());
 
+        Date d = new Date(1725976542769L);
+        System.out.println(d.getTime());
+
         CertificateVerifier cv = new CommonCertificateVerifier();
         ExternalCMSPAdESService service = new ExternalCMSPAdESService(cv);
 
         PAdESSignatureParameters parameters = new PAdESSignatureParameters();
-        parameters.bLevel().setSigningDate(new Date());
+        parameters.bLevel().setSigningDate(d);
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         parameters.setReason("DSS testing");
         parameters.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
@@ -70,7 +73,7 @@ public class DSS_Service {
         System.out.println("Message Digest: "+Base64.getEncoder().encodeToString(messageDigest.getValue()));
 
         PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
-        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.bLevel().setSigningDate(d);
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
         List<CertificateToken> certChainToken = new ArrayList<>();
         for (X509Certificate cert : certificateChain) {
@@ -80,8 +83,6 @@ public class DSS_Service {
         signatureParameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         signatureParameters.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
         signatureParameters.setReason("DSS testing");
-
-
 
         cv = new CommonCertificateVerifier();
         ExternalCMSService cmsForPAdESGenerationService = new ExternalCMSService(cv);

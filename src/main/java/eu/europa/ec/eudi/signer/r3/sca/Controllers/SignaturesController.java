@@ -43,9 +43,7 @@ public class SignaturesController {
 
         if (signDocRequest.getDocuments() != null) {
             try {
-                return this.signatureService.handleDocumentsSignDocRequest(
-                      signDocRequest, authorizationBearerHeader, certificateResponse.getCertificate(),
-                      certificateResponse.getCertificateChain(), certificateResponse.getSignAlgo()
+                return this.signatureService.handleDocumentsSignDocRequest(signDocRequest, authorizationBearerHeader, certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), certificateResponse.getSignAlgo()
                 );
             } catch (Exception e) {
 
