@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
 import org.springframework.stereotype.Service;
 
 import eu.europa.esig.dss.cades.signature.CMSSignedDocument;
@@ -50,19 +51,23 @@ public class DSS_Service {
 
     public byte[] padesToBeSignedData(DSSDocument documentToSign, String conformance_level,
             String signed_envelope_property, X509Certificate signingCertificate,
-            List<X509Certificate> certificateChain) {
+            List<X509Certificate> certificateChain, String hashAlgorithmOID) {
+
+        System.out.println(documentToSign.getName());
 
         CertificateVerifier cv = new CommonCertificateVerifier();
         ExternalCMSPAdESService service = new ExternalCMSPAdESService(cv);
 
         PAdESSignatureParameters parameters = new PAdESSignatureParameters();
         parameters.bLevel().setSigningDate(new Date());
-        parameters.setGenerateTBSWithoutCertificate(true);
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         parameters.setReason("DSS testing");
+        parameters.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
         parameters.setDigestAlgorithm(DigestAlgorithm.SHA256);
 
         DSSMessageDigest messageDigest = service.getMessageDigest(documentToSign, parameters);
+        System.out.println(messageDigest.getAlgorithm());
+        System.out.println("Message Digest: "+Base64.getEncoder().encodeToString(messageDigest.getValue()));
 
         PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
         signatureParameters.bLevel().setSigningDate(new Date());
@@ -73,7 +78,10 @@ public class DSS_Service {
         }
         signatureParameters.setCertificateChain(certChainToken);
         signatureParameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        signatureParameters.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
         signatureParameters.setReason("DSS testing");
+
+
 
         cv = new CommonCertificateVerifier();
         ExternalCMSService cmsForPAdESGenerationService = new ExternalCMSService(cv);
@@ -82,8 +90,7 @@ public class DSS_Service {
     }
 
     public DSSDocument getSignedDocument(DSSDocument documentToSign, byte[] signature,
-            X509Certificate signingCertificate,
-            List<X509Certificate> certificateChain) {
+            X509Certificate signingCertificate, List<X509Certificate> certificateChain, String signAlgo, String hashAlgorithmOID) {
 
         SignatureValue signatureValue = new SignatureValue();
         signatureValue.setAlgorithm(SignatureAlgorithm.RSA_SHA256);
@@ -97,6 +104,7 @@ public class DSS_Service {
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         parameters.setReason("DSS testing");
         DSSMessageDigest messageDigest = service.getMessageDigest(documentToSign, parameters);
+
 
         PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
         signatureParameters.bLevel().setSigningDate(new Date());
@@ -112,8 +120,7 @@ public class DSS_Service {
         // stateless
         cv = new CommonCertificateVerifier();
         ExternalCMSService cmsForPAdESGenerationService = new ExternalCMSService(cv);
-        CMSSignedDocument cmsSignedDocument = cmsForPAdESGenerationService.signMessageDigest(messageDigest,
-                signatureParameters, signatureValue);
+        CMSSignedDocument cmsSignedDocument = cmsForPAdESGenerationService.signMessageDigest(messageDigest, signatureParameters, signatureValue);
         byte[] cmsSignedData = cmsSignedDocument.getBytes();
 
         // Stateless
@@ -123,7 +130,6 @@ public class DSS_Service {
     }
 
     private static class ExternalCMSPAdESService extends PAdESService {
-        private static final long serialVersionUID = -2003453716888412577L;
         private byte[] cmsSignedData;
 
         public ExternalCMSPAdESService(CertificateVerifier certificateVerifier) {
@@ -135,9 +141,7 @@ public class DSS_Service {
         }
 
         @Override
-        protected byte[] generateCMSSignedData(final DSSDocument toSignDocument,
-                final PAdESSignatureParameters parameters,
-                final SignatureValue signatureValue) {
+        protected byte[] generateCMSSignedData(final DSSDocument toSignDocument, final PAdESSignatureParameters parameters, final SignatureValue signatureValue) {
             if (this.cmsSignedData == null) {
                 throw new NullPointerException("A CMS signed data must be provided");
             }

@@ -20,8 +20,7 @@ public class SignaturesSignDocRequestValidator
         if (request.getRequest_uri() == null)
             return false;
 
-        return (request.getCredentialID().equals(null) || request.getSignatureQualifier().equals(null))
-                && (request.getDocuments() == null || request.getDocumentDigests() == null);
+        return (request.getCredentialID() != null || request.getSignatureQualifier() != null) && (request.getDocuments() != null);
     }
 
 }

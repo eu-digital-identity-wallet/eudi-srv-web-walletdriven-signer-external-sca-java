@@ -24,10 +24,6 @@ public class DocumentsSignDocRequestValidator
             return false;
         }
 
-        if (request.getSignAlgo() == null) {
-            return false;
-        }
-
         if (request.getSignature_format() == null) {
             return false;
         }

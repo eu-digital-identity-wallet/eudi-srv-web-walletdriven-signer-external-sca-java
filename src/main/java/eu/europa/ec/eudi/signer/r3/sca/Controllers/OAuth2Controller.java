@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -26,7 +25,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 
@@ -61,15 +59,18 @@ public class OAuth2Controller {
     public AuthResponseTemporary credential_authorization(
           @RequestBody CredentialAuthorizationRequest credentialAuthorization,
           @RequestHeader (name="Authorization") String authorizationBearerHeader) throws Exception{
-        System.out.println("Authorize: -----------------------------");
-        System.out.println(credentialAuthorization.toString());
 
         System.out.println("authorization: "+authorizationBearerHeader);
-        List<X509Certificate> certificateList = this.credentialsService.getCertificateAndCertificateChain(credentialAuthorization.getResourceServerUrl(), credentialAuthorization.getCredentialID(), authorizationBearerHeader);
+        System.out.println(credentialAuthorization);
+        CredentialsService.CertificateResponse certificateResponse = this.credentialsService.getCertificateAndCertificateChain(credentialAuthorization.getResourceServerUrl(), credentialAuthorization.getCredentialID(), authorizationBearerHeader);
 
         // calculate hash
-        List<String> hashes = this.signatureService.calculateHashValue(credentialAuthorization.getDocuments(), certificateList.get(0), certificateList.subList(1, certificateList.size()), credentialAuthorization.getHashAlgorithmOID());
-        String hash = String.join(";", hashes);
+        List<String> hashes = this.signatureService.calculateHashValue(credentialAuthorization.getDocuments(), certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), credentialAuthorization.getHashAlgorithmOID());
+        for(String s: hashes){
+            System.out.println("Oauth2: "+ s);
+        }
+
+        String hash = String.join(",", hashes);
         System.out.println("hash: "+hash);
 
         // generate code_challenge, code_challenge_method, code_verifier
@@ -92,45 +93,6 @@ public class OAuth2Controller {
         System.out.println("-----------------------------");
         return responseTemporary;
     }
-
-    /*@GetMapping("/temporary")
-    public void temporary(@RequestBody AuthRequestTemporary authRequest) throws Exception{
-        System.out.println("Temporary: -----------------------------");
-
-        System.out.println("URL: " + authRequest.getUrl());
-        System.out.println("Cookie: " + authRequest.getCookie());
-
-        String location_redirect = null;
-        String new_session_id = null;
-
-        // Get localhost:9000 after auth
-        try(CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
-
-            HttpGet followRequest = new HttpGet(authRequest.getUrl());
-            followRequest.setHeader("Cookie", authRequest.getCookie());
-            HttpResponse followResponse = httpClient.execute(followRequest);
-
-            if(followResponse.getStatusLine().getStatusCode() == 302) {
-                location_redirect = followResponse.getLastHeader("Location").getValue();
-                System.out.println("Location: "+location_redirect);
-                new_session_id = followResponse.getLastHeader("Set-Cookie").getElements()[0].toString();
-                System.out.println("Cookie: "+new_session_id);
-            }
-        }
-
-        if ( location_redirect==null || new_session_id == null )
-            return;
-
-        System.out.println("-----------------------------");
-
-        // Get /oauth2/authorize after oid4vp
-        try(CloseableHttpClient httpClient2 = HttpClientBuilder.create().build()) {
-            HttpGet followRequest = new HttpGet(location_redirect);
-            followRequest.setHeader("Cookie", new_session_id);
-            HttpResponse followResponse = httpClient2.execute(followRequest);
-            // System.out.println(followResponse.getStatusLine().getStatusCode());
-        }
-    }*/
 
     private static String getBasicAuthenticationHeader(String username, String password) {
         String valueToEncode = username + ":" + password;

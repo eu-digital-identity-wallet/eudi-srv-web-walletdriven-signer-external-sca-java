@@ -1,6 +1,5 @@
 package eu.europa.ec.eudi.signer.r3.sca.DTO;
 
-import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.DocumentDigestsSignDocRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.DocumentsSignDocRequest;
 import java.util.List;
 
@@ -8,7 +7,6 @@ public class CredentialAuthorizationRequest {
 
     private String credentialID;
     private String numSignatures;
-    private List<DocumentDigestsSignDocRequest> documentDigests;
     private List<DocumentsSignDocRequest> documents;
     private String hashAlgorithmOID;
     private String authorizationServerUrl;
@@ -29,14 +27,6 @@ public class CredentialAuthorizationRequest {
 
     public void setNumSignatures(String numSignatures) {
         this.numSignatures = numSignatures;
-    }
-
-    public List<DocumentDigestsSignDocRequest> getDocumentDigests() {
-        return documentDigests;
-    }
-
-    public void setDocumentDigests(List<DocumentDigestsSignDocRequest> documentDigests) {
-        this.documentDigests = documentDigests;
     }
 
     public List<DocumentsSignDocRequest> getDocuments() {
@@ -84,7 +74,6 @@ public class CredentialAuthorizationRequest {
         return "CredentialAuthorizationRequest{" +
               "credentialID='" + credentialID + '\'' +
               ", numSignatures='" + numSignatures + '\'' +
-              ", documentDigests=" + documentDigests +
               ", documents=" + documents +
               ", hashAlgorithmOID='" + hashAlgorithmOID + '\'' +
               ", authorizationServerUrl='" + authorizationServerUrl + '\'' +
