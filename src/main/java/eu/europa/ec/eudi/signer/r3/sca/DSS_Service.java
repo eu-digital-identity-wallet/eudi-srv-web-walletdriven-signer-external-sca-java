@@ -108,7 +108,7 @@ public class DSS_Service {
 
 
         PAdESSignatureParameters signatureParameters = new PAdESSignatureParameters();
-        signatureParameters.bLevel().setSigningDate(new Date());
+        signatureParameters.bLevel().setSigningDate(new Date(1725976542769L));
         signatureParameters.setSigningCertificate(new CertificateToken(signingCertificate));
         List<CertificateToken> certChainToken = new ArrayList<>();
         for (X509Certificate cert : certificateChain) {
