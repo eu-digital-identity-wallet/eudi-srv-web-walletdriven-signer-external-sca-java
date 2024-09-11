@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,11 +26,21 @@ import eu.europa.ec.eudi.signer.r3.sca.DTO.SignaturesSignHashResponse;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.ValidationInfoSignDocResponse;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.DocumentsSignDocRequest;
 import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.SignaturesSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.Models.SignatureDocumentForm;
+import eu.europa.esig.dss.enumerations.ASiCContainerType;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
 import eu.europa.esig.dss.enumerations.MimeType;
+import eu.europa.esig.dss.enumerations.SignatureForm;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignaturePackaging;
 import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import jakarta.validation.Valid;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 @RestController
@@ -43,13 +55,49 @@ public class SignaturesController {
 
     private X509Certificate signingCertificate;
 
+    private CommonTrustedCertificateSource certificateSource;
+
+
     public SignaturesController() throws Exception {
         
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        InputStream in = new ByteArrayInputStream(cert_bytes);
-        this.signingCertificate = (X509Certificate) certFactory.generateCertificate(in);
+        this.certificateSource= new CommonTrustedCertificateSource();
 
-        System.out.println(this.signingCertificate.toString());
+        Properties properties = new Properties();
+        
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream("config.properties");
+        if (configStream == null) {
+            throw new Exception("Arquivo config.properties não encontrado!");
+        }
+
+        properties.load(configStream);
+
+        String certificatePath = properties.getProperty("SigningCertificate");
+        
+        if (certificatePath == null || certificatePath.isEmpty()) {
+            throw new Exception("Caminho do certificado não encontrado no arquivo de configuração!");
+        }
+
+        FileInputStream certInputStream = new FileInputStream(certificatePath);
+
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        this.signingCertificate = (X509Certificate) certFactory.generateCertificate(certInputStream);
+
+        String arrayOfStrings = properties.getProperty("TrustedCertificates");
+
+        String [] teste= arrayOfStrings.split(";");
+        System.out.println(teste);
+
+        for ( String path : teste){
+            if (path == null || path.isEmpty()) {
+                throw new Exception("Caminho do certificado não encontrado no arquivo de configuração!");
+            }
+            FileInputStream certInput= new FileInputStream(path);
+            X509Certificate certificate= (X509Certificate) certFactory.generateCertificate(certInput);
+            this.certificateSource.addCertificate(new CertificateToken(certificate));
+
+        }
+        
+        certInputStream.close();
 
     }
 
@@ -103,58 +151,35 @@ public class SignaturesController {
 
         List<SignaturesSignHashResponse> allResponses = new ArrayList<>();
         Date date = new Date();
+        SignatureDocumentForm SignatureDocumentForm = new SignatureDocumentForm();
         for (DocumentsSignDocRequest document : signDocRequest.getDocuments()) {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
             byte[] dataToBeSigned = null;
-            if (document.getSignature_format().equals("C")) {
-                
-                System.out.print("CAdES\n");
-                if(document.getContainer().equals("ASiC-E")) {
-                    dataToBeSigned = dssClient.cadesToBeSignedData_asic_E(dssDocument, document.getConformance_level(), 
-                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
-                }
-                else if(document.getContainer().equals("ASiC-S")) {
-                    dataToBeSigned = dssClient.cadesToBeSignedData_asic_S(dssDocument, document.getConformance_level(), 
-                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
+            
+            SignatureLevel aux_sign_level = DSS_Service.checkConformance_level(document.getConformance_level(), document.getSignature_format());
+            DigestAlgorithm aux_digest_alg = DSS_Service.checkSignAlgDigest(document.getSignAlgo());
+            SignaturePackaging aux_sign_pack = DSS_Service.checkEnvProps(document.getSigned_envelope_property());
+            ASiCContainerType aux_asic_ContainerType = DSS_Service.checkASiCContainerType(document.getContainer());
+            SignatureForm signatureForm= DSS_Service.checkSignForm(document.getSignature_format());
 
-                }
-                else {    
-                    dataToBeSigned = dssClient.cadesToBeSignedData(dssDocument,
-                    document.getConformance_level(), document.getSigned_envelope_property(),
-                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo(), date);
-                }
+            System.out.println(document.getSignature_format());
+            
+            SignatureDocumentForm.setDocumentToSign(dssDocument);
+            SignatureDocumentForm.setSignaturePackaging(aux_sign_pack);  
+            SignatureDocumentForm.setContainerType(aux_asic_ContainerType);  
+            SignatureDocumentForm.setSignatureLevel(aux_sign_level);
+            SignatureDocumentForm.setDigestAlgorithm(aux_digest_alg);
+            SignatureDocumentForm.setSignatureForm(signatureForm);
+            SignatureDocumentForm.setCertificate(this.signingCertificate);
+            SignatureDocumentForm.setDate(date);
+            SignatureDocumentForm.setTrustedCertificates(this.certificateSource);
+            SignatureDocumentForm.setSignatureForm(signatureForm);
+            SignatureDocumentForm.setCertChain(new ArrayList<>());
+            SignatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.ECDSA);
 
-            } else if (document.getSignature_format().equals("P")) {
-
-                System.out.print("PAdES\n");
-                dataToBeSigned = dssClient.padesToBeSignedData(dssDocument,
-                        document.getConformance_level(), document.getSigned_envelope_property(),
-                        this.signingCertificate, new ArrayList<>());
-                System.out.println("Data To Be Signed Created");
-            } else if (document.getSignature_format().equals("X")) {
-
-                System.out.print("XAdES\n");
-                if(document.getContainer().equals("ASiC-E")) {
-                    dataToBeSigned = dssClient.xadesToBeSignedData_asic_E(dssDocument, document.getConformance_level(), 
-                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
-                }
-                else if(document.getContainer().equals("ASiC-S")) {
-                    dataToBeSigned = dssClient.xadesToBeSignedData_asic_S(dssDocument, document.getConformance_level(), 
-                    document.getSigned_envelope_property(), this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
-
-                }
-                else {
-                    dataToBeSigned = dssClient.xadesToBeSignedData(dssDocument,
-                    document.getConformance_level(), document.getSigned_envelope_property(),
-                    this.signingCertificate, new ArrayList<>(), document.getSignAlgo(), date);
-                }
-            } else if (document.getSignature_format().equals("J")) {
-                System.out.print("JAdES\n");
-
-                dataToBeSigned = dssClient.jadesToBeSignedData(dssDocument,
-                document.getConformance_level(), document.getSigned_envelope_property(),
-                this.signingCertificate, new ArrayList<>(), document.getSignAlgo());
-            }
+            System.out.println("/n/n before DataToBeSigned /n/n");
+            dataToBeSigned = dssClient.DataToBeSignedData(SignatureDocumentForm);
+            System.out.println("\n\n after DataToBeSigned \n\n");
 
             if (dataToBeSigned == null) {
                 return new SignaturesSignDocResponse();
@@ -197,13 +222,33 @@ public class SignaturesController {
 
             DocumentsSignDocRequest document = signDocRequest.getDocuments().get(0);
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
+
+            SignatureLevel aux_sign_level = DSS_Service.checkConformance_level(document.getConformance_level(), document.getSignature_format());
+            DigestAlgorithm aux_digest_alg = DSS_Service.checkSignAlgDigest(document.getSignAlgo());
+            SignaturePackaging aux_sign_pack = DSS_Service.checkEnvProps(document.getSigned_envelope_property());
+            ASiCContainerType aux_asic_ContainerType = DSS_Service.checkASiCContainerType(document.getContainer());
+            SignatureForm signatureForm= DSS_Service.checkSignForm(document.getSignature_format());
+            
+            SignatureDocumentForm.setDocumentToSign(dssDocument);
+            SignatureDocumentForm.setSignaturePackaging(aux_sign_pack);  
+            SignatureDocumentForm.setContainerType(aux_asic_ContainerType);  
+            SignatureDocumentForm.setSignatureLevel(aux_sign_level);
+            SignatureDocumentForm.setDigestAlgorithm(aux_digest_alg);
+            SignatureDocumentForm.setSignatureForm(signatureForm);
+            SignatureDocumentForm.setCertificate(this.signingCertificate);
+            SignatureDocumentForm.setDate(date);
+            SignatureDocumentForm.setTrustedCertificates(this.certificateSource);
+            SignatureDocumentForm.setSignatureForm(signatureForm);
+            SignatureDocumentForm.setCertChain(new ArrayList<>());
+            SignatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.ECDSA);
+            
             
             if (response.getSignatures() != null) {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
-                DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, signingCertificate,
-                        new ArrayList<>(), document.getSignAlgo(), document.getSignature_format(), document.getConformance_level(),
-                        document.getSigned_envelope_property(), document.getContainer(), date);
+                SignatureDocumentForm.setSignatureValue(signature);
+                DSSDocument docSigned = dssClient.signDocument(SignatureDocumentForm);
                         System.out.println(docSigned);
+
                 try {
                     if (document.getContainer().equals("ASiC-E")) {
                         if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
