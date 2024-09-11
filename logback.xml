@@ -1,10 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
-	<root level="DEBUG">
-		<appender-ref ref="CONSOLE" />
-	</root>
-	<logger name="org.springframework.web" level="DEBUG"/>
-    <logger name="eu.europa.esig.dss" level="DEBUG"/>
+
+    <!-- Configurações padrão do Spring Boot -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Definir o appender para o ficheiro de logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Definir o appender para a consola -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Configurar root logger para consola -->
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- Configurar logger para ficheiro -->
+    <logger name="FileLogger" level="DEBUG">
+        <appender-ref ref="FILE" />
+    </logger>
+
 </configuration>

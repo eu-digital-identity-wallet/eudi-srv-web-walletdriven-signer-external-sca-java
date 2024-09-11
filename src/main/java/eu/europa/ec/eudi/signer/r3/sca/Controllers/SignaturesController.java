@@ -43,9 +43,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping(value = "/signatures")
 public class SignaturesController {
+    private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
 
     @Autowired
     private QtspClient qtspClient;
@@ -103,6 +107,7 @@ public class SignaturesController {
 
     @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
     public SignaturesSignDocResponse signDoc(@Valid @RequestBody SignaturesSignDocRequest signDocRequest) {
+        fileLogger.info("Entry /signDoc");
 
         System.out.println(signDocRequest);
         String url = signDocRequest.getRequest_uri();
@@ -176,6 +181,8 @@ public class SignaturesController {
             SignatureDocumentForm.setSignatureForm(signatureForm);
             SignatureDocumentForm.setCertChain(new ArrayList<>());
             SignatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.ECDSA);
+
+            fileLogger.debug("SignatureDocumentForm: " + SignatureDocumentForm.getSignaturePackaging());
 
             System.out.println("/n/n before DataToBeSigned /n/n");
             dataToBeSigned = dssClient.DataToBeSignedData(SignatureDocumentForm);
