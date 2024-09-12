@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +63,7 @@ import eu.europa.esig.dss.validation.RevocationDataVerifier;
 
 @Service
 public class DSS_Service {
+    private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
 
     public static SignatureLevel checkConformance_level(String conformance_level, String string) {
         String enumValue = mapToEnumValue(conformance_level, string);
@@ -93,6 +96,7 @@ public class DSS_Service {
                 prefix = "XAdES_BASELINE_";
                 break;
             default:
+                fileLogger.error("Conformance Level invalid.");
                 return null;
         }
 
@@ -106,6 +110,7 @@ public class DSS_Service {
             case "Ades-B-T":
                 return prefix + "T";
             default:
+                fileLogger.error("Conformance Level invalid.");
                 return null;
         }
     }
@@ -121,6 +126,7 @@ public class DSS_Service {
             case "X":
                 return SignatureForm.XAdES;
             default:
+                fileLogger.error("Signature Format invalid.");
                 return null;
         }
     }
@@ -147,6 +153,7 @@ public class DSS_Service {
             case "1.2.840.113549.1.1.13":
                 return DigestAlgorithm.SHA512;
             default:
+                fileLogger.error("Signature Digest Algorithm invalid.");
                 return null;
         }
     }
@@ -160,6 +167,7 @@ public class DSS_Service {
             case "ASiC-S":
                 return ASiCContainerType.ASiC_S;
             default:
+                fileLogger.error("ASICC Container Type invalid.");
                 return null;
         }
     }
@@ -175,6 +183,7 @@ public class DSS_Service {
             case "INTERNALLY_DETACHED":
                 return SignaturePackaging.INTERNALLY_DETACHED;
             default:
+                fileLogger.error("Signature Packaging invalid.");
                 return null;
         }
     }
@@ -194,8 +203,10 @@ public class DSS_Service {
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
                 form.getTrustedCertificates());
 
-        System.out.println("/n/n Teste1 /n/n");
+        fileLogger.info("DataToBeSignedData Service created.");
         AbstractSignatureParameters parameters = fillParameters(form);
+
+        fileLogger.info("DataToBeSignedData Parameters Filled.");
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         ToBeSigned toBeSigned = service.getDataToSign(toSignDocument, parameters);
@@ -209,7 +220,10 @@ public class DSS_Service {
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
                 form.getTrustedCertificates());
 
+        fileLogger.info("signDocument Service created.");
+        
         AbstractSignatureParameters parameters = fillParameters(form);
+        fileLogger.info("DataToBeSignedData Parameters Filled.");
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         SignatureAlgorithm sigAlgorithm = SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(),
@@ -278,8 +292,6 @@ public class DSS_Service {
     private DocumentSignatureService getSignatureService(ASiCContainerType containerType, SignatureForm signatureForm,
             CommonTrustedCertificateSource TrustedCertificates) {
 
-        System.out.println("\n\n" + containerType + "\n\n");
-
         CertificateVerifier cv = new CommonCertificateVerifier();
 
         cv.setTrustedCertSources(TrustedCertificates);
@@ -318,8 +330,6 @@ public class DSS_Service {
 
         cv.setRevocationFallback(true);
 
-        System.out.println("\n\n" + signatureForm + "\n\n");
-
         DocumentSignatureService service = null;
         if (containerType != null) {
             service = (DocumentSignatureService) getASiCSignatureService(signatureForm, cv);
@@ -341,8 +351,7 @@ public class DSS_Service {
                     throw new IllegalArgumentException(String.format("Unknown signature form : %s", signatureForm));
             }
         }
-
-        System.out.println("\n\n" + service.toString() + "\n\n");
+        
         String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
         OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
         onlineTSPSource.setDataLoader(new TimestampDataLoader());

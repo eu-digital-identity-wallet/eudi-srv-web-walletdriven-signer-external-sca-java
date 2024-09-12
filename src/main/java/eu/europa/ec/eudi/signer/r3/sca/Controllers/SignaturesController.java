@@ -1,7 +1,9 @@
 package eu.europa.ec.eudi.signer.r3.sca.Controllers;
 
+import java.beans.PropertyDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -11,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -78,7 +81,7 @@ public class SignaturesController {
         String certificatePath = properties.getProperty("SigningCertificate");
         
         if (certificatePath == null || certificatePath.isEmpty()) {
-            throw new Exception("Caminho do certificado não encontrado no arquivo de configuração!");
+            throw new Exception("Signature Certificate Path not found in configuration file.");
         }
 
         FileInputStream certInputStream = new FileInputStream(certificatePath);
@@ -89,11 +92,10 @@ public class SignaturesController {
         String arrayOfStrings = properties.getProperty("TrustedCertificates");
 
         String [] teste= arrayOfStrings.split(";");
-        System.out.println(teste);
 
         for ( String path : teste){
             if (path == null || path.isEmpty()) {
-                throw new Exception("Caminho do certificado não encontrado no arquivo de configuração!");
+                throw new Exception("Trusted Certificate Path not found in configuration file.");
             }
             FileInputStream certInput= new FileInputStream(path);
             X509Certificate certificate= (X509Certificate) certFactory.generateCertificate(certInput);
@@ -107,9 +109,11 @@ public class SignaturesController {
 
     @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
     public SignaturesSignDocResponse signDoc(@Valid @RequestBody SignaturesSignDocRequest signDocRequest) {
-        fileLogger.info("Entry /signDoc");
 
-        System.out.println(signDocRequest);
+        fileLogger.info("Entry /signDoc");
+        
+        fileLogger.info("Signature Document Request:" + signDocRequest);
+
         String url = signDocRequest.getRequest_uri();
         if (signDocRequest.getCredentialID() == null) {
             System.out.println("To be defined: CredentialID needs to be defined in this implementation.");
@@ -167,7 +171,10 @@ public class SignaturesController {
             ASiCContainerType aux_asic_ContainerType = DSS_Service.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm= DSS_Service.checkSignForm(document.getSignature_format());
 
-            System.out.println(document.getSignature_format());
+            fileLogger.info("Payload Received:{"+ "Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +",conformance_level:" +document.getConformance_level()+ ","+
+            "Signature Format:"+ document.getSignature_format() + "," + "Signature Algorithm:"+ document.getSignAlgo() + "," +
+            "Signature Packaging:"+ document.getSigned_envelope_property() + "," + "Type of Container:"+ document.getContainer() + "}");
+           
             
             SignatureDocumentForm.setDocumentToSign(dssDocument);
             SignatureDocumentForm.setSignaturePackaging(aux_sign_pack);  
@@ -182,11 +189,10 @@ public class SignaturesController {
             SignatureDocumentForm.setCertChain(new ArrayList<>());
             SignatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.ECDSA);
 
-            fileLogger.debug("SignatureDocumentForm: " + SignatureDocumentForm.getSignaturePackaging());
+            fileLogger.info("SignatureDocumentForm: " + SignatureDocumentForm.getSignaturePackaging());
 
-            System.out.println("/n/n before DataToBeSigned /n/n");
             dataToBeSigned = dssClient.DataToBeSignedData(SignatureDocumentForm);
-            System.out.println("\n\n after DataToBeSigned \n\n");
+            fileLogger.info("DataToBeSigned successfully created");
 
             if (dataToBeSigned == null) {
                 return new SignaturesSignDocResponse();
@@ -195,8 +201,6 @@ public class SignaturesController {
             String dtbs = Base64.getEncoder().encodeToString(dataToBeSigned);
             List<String> doc = new ArrayList<>();
             doc.add(dtbs);
-
-            System.out.println(signDocRequest.toString());
 
             // As the current operation mode only supported is "S", the validity_period and
             // response_uri do not need to be defined
@@ -213,12 +217,14 @@ public class SignaturesController {
                     signDocRequest.getClientData());
 
             try {
-                System.out.println("HTTP Request to QTSP.");
+
+                fileLogger.info("HTTP Request to QTSP.");
                 SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest);
-                System.out.println("HTTP Response received.");
                 allResponses.add(signHashResponse);
-                System.out.println(signHashResponse.toString());
+                fileLogger.info("HTTP Response received.");
+
             } catch (Exception e) {
+                fileLogger.error("Error " + e);
                 e.printStackTrace();
             }
         }
@@ -254,12 +260,12 @@ public class SignaturesController {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 SignatureDocumentForm.setSignatureValue(signature);
                 DSSDocument docSigned = dssClient.signDocument(SignatureDocumentForm);
-                        System.out.println(docSigned);
+                fileLogger.info("Document successfully signed.");
 
                 try {
                     if (document.getContainer().equals("ASiC-E")) {
                         if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
-                            System.out.println("\nASIC-E\n");
+                            
                             docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-e+zip"));
                             docSigned.save("tests/exampleSigned.cse");
 
@@ -272,7 +278,7 @@ public class SignaturesController {
                     }
                     else if (document.getContainer().equals("ASiC-S")) {
                         if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
-                            System.out.println("\nASIC-S\n");
+
                             docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-s+zip"));
                             docSigned.save("tests/exampleSigned.scs");
 
@@ -284,7 +290,7 @@ public class SignaturesController {
 
                     }
                     else if (document.getSignature_format().equals("J")) {
-                        System.out.println("\nJADES SIGN\n");
+
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
                         docSigned.save("tests/exampleSigned.json");
 
@@ -294,7 +300,7 @@ public class SignaturesController {
                         DocumentWithSignature.add(Base64.getEncoder().encodeToString(jsonBytes));
                     }
                     else if (document.getSignature_format().equals("X")) {
-                        System.out.println("\nXADES SIGN\n");
+
                         docSigned.setMimeType(MimeType.fromMimeTypeString("text/xml"));
                         docSigned.save("tests/exampleSigned.xml");
 
@@ -303,7 +309,7 @@ public class SignaturesController {
                         DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
                     }
                     else {
-                        System.out.println("\nOTHERS SIGN\n");
+                        
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                         docSigned.save("tests/exampleSigned.pdf");
 
