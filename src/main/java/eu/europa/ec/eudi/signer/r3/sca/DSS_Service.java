@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import eu.europa.ec.eudi.signer.r3.sca.Models.SignatureDocumentForm;
 import eu.europa.esig.dss.AbstractSignatureParameters;
@@ -96,7 +97,7 @@ public class DSS_Service {
                 prefix = "XAdES_BASELINE_";
                 break;
             default:
-                fileLogger.error("Conformance Level invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Conformance Level invalid.");
                 return null;
         }
 
@@ -110,7 +111,7 @@ public class DSS_Service {
             case "Ades-B-T":
                 return prefix + "T";
             default:
-                fileLogger.error("Conformance Level invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Conformance Level invalid.");
                 return null;
         }
     }
@@ -126,7 +127,7 @@ public class DSS_Service {
             case "X":
                 return SignatureForm.XAdES;
             default:
-                fileLogger.error("Signature Format invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Format invalid.");
                 return null;
         }
     }
@@ -153,7 +154,7 @@ public class DSS_Service {
             case "1.2.840.113549.1.1.13":
                 return DigestAlgorithm.SHA512;
             default:
-                fileLogger.error("Signature Digest Algorithm invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Digest Algorithm invalid.");
                 return null;
         }
     }
@@ -167,7 +168,7 @@ public class DSS_Service {
             case "ASiC-S":
                 return ASiCContainerType.ASiC_S;
             default:
-                fileLogger.error("ASICC Container Type invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"ASICC Container Type invalid.");
                 return null;
         }
     }
@@ -183,7 +184,7 @@ public class DSS_Service {
             case "INTERNALLY_DETACHED":
                 return SignaturePackaging.INTERNALLY_DETACHED;
             default:
-                fileLogger.error("Signature Packaging invalid.");
+                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Packaging invalid.");
                 return null;
         }
     }
@@ -203,10 +204,10 @@ public class DSS_Service {
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
                 form.getTrustedCertificates());
 
-        fileLogger.info("DataToBeSignedData Service created.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Service created.");
         AbstractSignatureParameters parameters = fillParameters(form);
 
-        fileLogger.info("DataToBeSignedData Parameters Filled.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Parameters Filled.");
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         ToBeSigned toBeSigned = service.getDataToSign(toSignDocument, parameters);
@@ -220,10 +221,10 @@ public class DSS_Service {
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
                 form.getTrustedCertificates());
 
-        fileLogger.info("signDocument Service created.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"signDocument Service created.");
         
         AbstractSignatureParameters parameters = fillParameters(form);
-        fileLogger.info("DataToBeSignedData Parameters Filled.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Parameters Filled.");
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         SignatureAlgorithm sigAlgorithm = SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(),
@@ -351,7 +352,7 @@ public class DSS_Service {
                     throw new IllegalArgumentException(String.format("Unknown signature form : %s", signatureForm));
             }
         }
-        
+
         String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
         OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
         onlineTSPSource.setDataLoader(new TimestampDataLoader());

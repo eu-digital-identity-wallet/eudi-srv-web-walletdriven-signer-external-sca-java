@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import eu.europa.ec.eudi.signer.r3.sca.DSS_Service;
 import eu.europa.ec.eudi.signer.r3.sca.QtspClient;
@@ -171,7 +172,8 @@ public class SignaturesController {
             ASiCContainerType aux_asic_ContainerType = DSS_Service.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm= DSS_Service.checkSignForm(document.getSignature_format());
 
-            fileLogger.info("Payload Received:{"+ "Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +",conformance_level:" +document.getConformance_level()+ ","+
+
+            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Payload Received:{"+ "Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +",conformance_level:" +document.getConformance_level()+ ","+
             "Signature Format:"+ document.getSignature_format() + "," + "Signature Algorithm:"+ document.getSignAlgo() + "," +
             "Signature Packaging:"+ document.getSigned_envelope_property() + "," + "Type of Container:"+ document.getContainer() + "}");
            
@@ -189,10 +191,8 @@ public class SignaturesController {
             SignatureDocumentForm.setCertChain(new ArrayList<>());
             SignatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.ECDSA);
 
-            fileLogger.info("SignatureDocumentForm: " + SignatureDocumentForm.getSignaturePackaging());
-
             dataToBeSigned = dssClient.DataToBeSignedData(SignatureDocumentForm);
-            fileLogger.info("DataToBeSigned successfully created");
+            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",DataToBeSigned successfully created");
 
             if (dataToBeSigned == null) {
                 return new SignaturesSignDocResponse();
@@ -218,10 +218,10 @@ public class SignaturesController {
 
             try {
 
-                fileLogger.info("HTTP Request to QTSP.");
+                fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Request to QTSP.");
                 SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(url, signHashRequest);
                 allResponses.add(signHashResponse);
-                fileLogger.info("HTTP Response received.");
+                fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Response received.");
 
             } catch (Exception e) {
                 fileLogger.error("Error " + e);
@@ -260,7 +260,7 @@ public class SignaturesController {
                 byte[] signature = Base64.getDecoder().decode(response.getSignatures().get(0));
                 SignatureDocumentForm.setSignatureValue(signature);
                 DSSDocument docSigned = dssClient.signDocument(SignatureDocumentForm);
-                fileLogger.info("Document successfully signed.");
+                fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Document successfully signed.");
 
                 try {
                     if (document.getContainer().equals("ASiC-E")) {
@@ -309,7 +309,7 @@ public class SignaturesController {
                         DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
                     }
                     else {
-                        
+
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                         docSigned.save("tests/exampleSigned.pdf");
 
