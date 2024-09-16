@@ -17,6 +17,7 @@ public class DocumentsSignDocRequest {
     private String signAlgoParams;
     private List<AttributeSignDocRequest> signed_props;
     private String signed_envelope_property;
+    private String container = "No";
 
     public String getDocument() {
         return document;
@@ -72,5 +73,13 @@ public class DocumentsSignDocRequest {
 
     public void setSigned_envelope_property(String signed_envelope_property) {
         this.signed_envelope_property = signed_envelope_property;
+    }
+
+    public String getContainer() {
+        return container;
+    }
+
+    public void setContainer(String container) {
+        this.container = container;
     }
 }

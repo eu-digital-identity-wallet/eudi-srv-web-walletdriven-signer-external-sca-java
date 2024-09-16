@@ -61,6 +61,26 @@
             <artifactId>dss-pades</artifactId>
             <version>6.0</version>
         </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-service</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-cades</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-xades</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-jades</artifactId>
+            <version>6.0</version>
+        </dependency>
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-pades-pdfbox</artifactId>
@@ -75,6 +95,26 @@
 			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
 			<artifactId>validation-policy</artifactId>
             <version>6.0</version>
+		</dependency>
+		<dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-common</artifactId>
+            <version>6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-cades</artifactId>
+            <version>6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-asic-xades</artifactId>
+            <version>6.0</version>
+        </dependency>
+		<dependency>
+			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+			<artifactId>dss-crl-parser-x509crl</artifactId>
+			<version>6.0</version>
 		</dependency>
 	</dependencies>
 

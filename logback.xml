@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Set the appender for the log file -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file> <!-- Location and name of log file -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd}.log</fileNamePattern> <!-- Rotative files base in date -->
+            <maxHistory>30</maxHistory> <!-- Keep logs of the last 30 days -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern> <!-- Log Format-->
+        </encoder>
+    </appender>
+
+    <!-- Set the appender for the console-->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern> <!-- Log Format-->
+        </encoder>
+    </appender>
+
+    <root level="DEBUG"> <!-- Log Level -->
+        <appender-ref ref="CONSOLE" /> <!-- Logs for the console -->
+        <appender-ref ref="FILE" /> <!-- Logs for the file -->
+    </root>
+
+</configuration>
