@@ -15,6 +15,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Properties;
+
+import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,47 +35,28 @@ public class SignaturesController {
 
     private final SignatureService signatureService;
     private final CredentialsService credentialsService;
-
-    @Autowired
-    private QtspClient qtspClient;
-    @Autowired
-    private DSSService dssClient;
-
-    private CommonTrustedCertificateSource certificateSource;
+    private final CertificateToken TSACertificateToken;
 
 
     public SignaturesController(@Autowired CredentialsService credentialsService, @Autowired SignatureService signatureService) throws Exception {
-
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
-        this.certificateSource= new CommonTrustedCertificateSource();
 
         Properties properties = new Properties();
-
         InputStream configStream = getClass().getClassLoader().getResourceAsStream("config.properties");
         if (configStream == null) {
             throw new Exception("Arquivo config.properties não encontrado!");
         }
-
         properties.load(configStream);
 
-        String certificatePath = properties.getProperty("SigningCertificate");
-        if (certificatePath == null || certificatePath.isEmpty()) {
-            throw new Exception("Signature Certificate Path not found in configuration file.");
-        }
-
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        String arrayOfStrings = properties.getProperty("TrustedCertificates");
-        String [] teste = arrayOfStrings.split(";");
-        for ( String path : teste){
-            if (path == null || path.isEmpty()) {
-                throw new Exception("Trusted Certificate Path not found in configuration file.");
-            }
-            FileInputStream certInput= new FileInputStream(path);
-            X509Certificate certificate= (X509Certificate) certFactory.generateCertificate(certInput);
-            this.certificateSource.addCertificate(new CertificateToken(certificate));
-
+        String certificateStringPath = properties.getProperty("TrustedCertificates");
+        if (certificateStringPath == null || certificateStringPath.isEmpty()) {
+            throw new Exception("Trusted Certificate Path not found in configuration file.");
         }
+        FileInputStream certInput= new FileInputStream(certificateStringPath);
+        X509Certificate TSACertificate = (X509Certificate) certFactory.generateCertificate(certInput);
+        this.TSACertificateToken = new CertificateToken(TSACertificate);
     }
 
     @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
@@ -102,7 +85,10 @@ public class SignaturesController {
         if (signDocRequest.getDocuments() != null) {
             try {
                 CommonTrustedCertificateSource commonTrustedCertificateSource = new CommonTrustedCertificateSource();
-
+                commonTrustedCertificateSource.addCertificate(this.TSACertificateToken);
+                for (X509Certificate cert: certificateResponse.getCertificateChain()){
+                    commonTrustedCertificateSource.addCertificate(new CertificateToken(cert));
+                }
                 Date date = new Date(signDocRequest.getSignature_date());
                 return this.signatureService.handleDocumentsSignDocRequest(signDocRequest, authorizationBearerHeader, certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), certificateResponse.getSignAlgo(), date);
             } catch (Exception e) {

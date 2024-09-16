@@ -112,7 +112,6 @@ public class SignatureService {
             DocumentsSignDocRequest document = signDocRequest.getDocuments().get(i);
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
-
             SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
             DigestAlgorithm aux_digest_alg = DSSService.checkSignAlgDigest(signDocRequest.getHashAlgorithmOID());
             SignaturePackaging aux_sign_pack = DSSService.checkEnvProps(document.getSigned_envelope_property());
@@ -130,14 +129,13 @@ public class SignatureService {
             signatureDocumentForm.setDate(date);
             signatureDocumentForm.setTrustedCertificates(certificateSource);
             signatureDocumentForm.setSignatureForm(signatureForm);
-            signatureDocumentForm.setCertChain(new ArrayList<>());
+            signatureDocumentForm.setCertChain(certificateChain);
             signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
 
             byte[] signature = Base64.getDecoder().decode(signHashResponse.getSignatures().get(i));
             signatureDocumentForm.setSignatureValue(signature);
             DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
             fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Document successfully signed.");
-            //DSSDocument docSigned = dssClient.getSignedDocument(dssDocument, signature, certificate, certificateChain, signAlgo.get(0), signDocRequest.getHashAlgorithmOID());
 
             try {
                 if (document.getContainer().equals("ASiC-E")) {

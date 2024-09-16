@@ -146,9 +146,15 @@ public class DSSService {
         switch (alg) {
             case "1.2.840.113549.1.1.11":
                 return DigestAlgorithm.SHA256;
+            case "2.16.840.1.101.3.4.2.1":
+                return DigestAlgorithm.SHA256;
             case "1.2.840.113549.1.1.12":
                 return DigestAlgorithm.SHA384;
+            case "2.16.840.1.101.3.4.2.2":
+                return DigestAlgorithm.SHA384;
             case "1.2.840.113549.1.1.13":
+                return DigestAlgorithm.SHA512;
+            case "2.16.840.1.101.3.4.2.3":
                 return DigestAlgorithm.SHA512;
             default:
                 fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Digest Algorithm invalid.");

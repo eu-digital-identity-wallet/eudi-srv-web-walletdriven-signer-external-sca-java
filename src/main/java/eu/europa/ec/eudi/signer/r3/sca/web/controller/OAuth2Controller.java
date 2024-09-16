@@ -6,6 +6,7 @@ import eu.europa.ec.eudi.signer.r3.sca.web.dto.OAuth2AuthorizeRequest;
 import eu.europa.ec.eudi.signer.r3.sca.model.QtspClient;
 import eu.europa.ec.eudi.signer.r3.sca.model.CredentialsService;
 import eu.europa.ec.eudi.signer.r3.sca.model.SignatureService;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.http.Header;
@@ -20,15 +21,19 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.sql.CommonDataSource;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 @RestController
 @RequestMapping(value = "/credential")
@@ -37,13 +42,31 @@ public class OAuth2Controller {
     private final QtspClient qtspClient;
     private final CredentialsService credentialsService;
     private final SignatureService signatureService;
+    private final CertificateToken TSACertificateToken;
+
 
     public OAuth2Controller(@Autowired QtspClient qtspClient,
                             @Autowired CredentialsService credentialsService,
-                            @Autowired SignatureService signatureService){
+                            @Autowired SignatureService signatureService) throws Exception{
         this.qtspClient = qtspClient;
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
+
+        Properties properties = new Properties();
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream("config.properties");
+        if (configStream == null) {
+            throw new Exception("Arquivo config.properties não encontrado!");
+        }
+        properties.load(configStream);
+
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        String certificateStringPath = properties.getProperty("TrustedCertificates");
+        if (certificateStringPath == null || certificateStringPath.isEmpty()) {
+            throw new Exception("Trusted Certificate Path not found in configuration file.");
+        }
+        FileInputStream certInput= new FileInputStream(certificateStringPath);
+        X509Certificate TSACertificate = (X509Certificate) certFactory.generateCertificate(certInput);
+        this.TSACertificateToken = new CertificateToken(TSACertificate);
     }
 
     private String generateNonce(String root) throws Exception{
@@ -63,11 +86,16 @@ public class OAuth2Controller {
           @RequestHeader (name="Authorization") String authorizationBearerHeader) throws Exception{
 
         System.out.println("authorization: "+authorizationBearerHeader);
-        System.out.println(credentialAuthorization);
+        System.out.println("credential authorization request: "+credentialAuthorization);
         CredentialsService.CertificateResponse certificateResponse = this.credentialsService.getCertificateAndCertificateChain(credentialAuthorization.getResourceServerUrl(), credentialAuthorization.getCredentialID(), authorizationBearerHeader);
 
         Date date = new Date();
         CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+        certificateSource.addCertificate(this.TSACertificateToken);
+        for(X509Certificate cert: certificateResponse.getCertificateChain()){
+            certificateSource.addCertificate(new CertificateToken(cert));
+        }
+
 
         // calculate hash
         List<String> hashes = this.signatureService.calculateHashValue(credentialAuthorization.getDocuments(), certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), credentialAuthorization.getHashAlgorithmOID(), date, certificateSource);
