@@ -1,8 +1,7 @@
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import eu.europa.ec.eudi.signer.r3.sca.DTO.CredentialsInfo.CredentialsInfoRequest;
-import eu.europa.ec.eudi.signer.r3.sca.DTO.CredentialsInfo.CredentialsInfoResponse;
-import eu.europa.ec.eudi.signer.r3.sca.QtspClient;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.CredentialsInfo.CredentialsInfoRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.CredentialsInfo.CredentialsInfoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-
 
 @Service
 public class CredentialsService {
@@ -94,7 +92,4 @@ public class CredentialsService {
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
         return (X509Certificate)certFactory.generateCertificate(inputStream);
     }
-
-
-
 }
