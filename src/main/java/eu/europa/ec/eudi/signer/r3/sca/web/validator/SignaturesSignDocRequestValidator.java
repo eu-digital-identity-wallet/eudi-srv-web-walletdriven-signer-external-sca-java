@@ -1,6 +1,6 @@
-package eu.europa.ec.eudi.signer.r3.sca.Validators;
+package eu.europa.ec.eudi.signer.r3.sca.web.validator;
 
-import eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest.SignaturesSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest.SignaturesSignDocRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -20,8 +20,7 @@ public class SignaturesSignDocRequestValidator
         if (request.getRequest_uri() == null)
             return false;
 
-        return (request.getCredentialID().equals(null) || request.getSignatureQualifier().equals(null))
-                && (request.getDocuments() == null || request.getDocumentDigests() == null);
+        return (request.getCredentialID() != null || request.getSignatureQualifier() != null) && (request.getDocuments() != null);
     }
 
 }

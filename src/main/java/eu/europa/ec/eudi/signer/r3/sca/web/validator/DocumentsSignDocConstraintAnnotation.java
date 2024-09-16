@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.Validators;
+package eu.europa.ec.eudi.signer.r3.sca.web.validator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

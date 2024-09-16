@@ -1,9 +1,8 @@
-package eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest;
 
-import java.util.List;
-
-import eu.europa.ec.eudi.signer.r3.sca.Validators.DocumentsSignDocConstraintAnnotation;
+import eu.europa.ec.eudi.signer.r3.sca.web.validator.DocumentsSignDocConstraintAnnotation;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 
 @DocumentsSignDocConstraintAnnotation
 public class DocumentsSignDocRequest {
@@ -12,9 +11,6 @@ public class DocumentsSignDocRequest {
     @NotBlank
     private String signature_format = null;
     private String conformance_level = "AdES-B-B";
-    @NotBlank
-    private String signAlgo;
-    private String signAlgoParams;
     private List<AttributeSignDocRequest> signed_props;
     private String signed_envelope_property;
     private String container = "No";
@@ -41,22 +37,6 @@ public class DocumentsSignDocRequest {
 
     public void setConformance_level(String conformance_level) {
         this.conformance_level = conformance_level;
-    }
-
-    public String getSignAlgo() {
-        return signAlgo;
-    }
-
-    public void setSignAlgo(String signAlgo) {
-        this.signAlgo = signAlgo;
-    }
-
-    public String getSignAlgoParams() {
-        return signAlgoParams;
-    }
-
-    public void setSignAlgoParams(String signAlgoParams) {
-        this.signAlgoParams = signAlgoParams;
     }
 
     public List<AttributeSignDocRequest> getSigned_props() {

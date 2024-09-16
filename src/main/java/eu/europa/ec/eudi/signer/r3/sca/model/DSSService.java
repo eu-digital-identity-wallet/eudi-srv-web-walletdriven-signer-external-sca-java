@@ -1,18 +1,5 @@
-package eu.europa.ec.eudi.signer.r3.sca;
+package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.event.Level;
-import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-
-import eu.europa.ec.eudi.signer.r3.sca.Models.SignatureDocumentForm;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
 import eu.europa.esig.dss.alert.LogOnStatusAlert;
@@ -61,9 +48,19 @@ import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
 import eu.europa.esig.dss.validation.RevocationDataVerifier;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 
 @Service
-public class DSS_Service {
+public class DSSService {
     private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
 
     public static SignatureLevel checkConformance_level(String conformance_level, String string) {
@@ -149,9 +146,15 @@ public class DSS_Service {
         switch (alg) {
             case "1.2.840.113549.1.1.11":
                 return DigestAlgorithm.SHA256;
+            case "2.16.840.1.101.3.4.2.1":
+                return DigestAlgorithm.SHA256;
             case "1.2.840.113549.1.1.12":
                 return DigestAlgorithm.SHA384;
+            case "2.16.840.1.101.3.4.2.2":
+                return DigestAlgorithm.SHA384;
             case "1.2.840.113549.1.1.13":
+                return DigestAlgorithm.SHA512;
+            case "2.16.840.1.101.3.4.2.3":
                 return DigestAlgorithm.SHA512;
             default:
                 fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Digest Algorithm invalid.");
@@ -194,15 +197,11 @@ public class DSS_Service {
         return new InMemoryDocument(dataDocument);
     }
 
-    public void test() {
-        System.out.println("This is a test.");
-    }
-
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public byte[] DataToBeSignedData(SignatureDocumentForm form) throws CertificateException {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
-                form.getTrustedCertificates());
+              form.getTrustedCertificates());
 
         fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Service created.");
         AbstractSignatureParameters parameters = fillParameters(form);
@@ -219,16 +218,16 @@ public class DSS_Service {
     public DSSDocument signDocument(SignatureDocumentForm form) {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
-                form.getTrustedCertificates());
+              form.getTrustedCertificates());
 
         fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"signDocument Service created.");
-        
+
         AbstractSignatureParameters parameters = fillParameters(form);
         fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Parameters Filled.");
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         SignatureAlgorithm sigAlgorithm = SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(),
-                form.getDigestAlgorithm());
+              form.getDigestAlgorithm());
 
         SignatureValue signatureValue = new SignatureValue();
         signatureValue.setAlgorithm(sigAlgorithm);
@@ -243,7 +242,7 @@ public class DSS_Service {
     private AbstractSignatureParameters fillParameters(SignatureDocumentForm form) {
 
         AbstractSignatureParameters parameters = getSignatureParameters(form.getContainerType(),
-                form.getSignatureForm());
+              form.getSignatureForm());
         parameters.setSignaturePackaging(form.getSignaturePackaging());
 
         fillParameters(parameters, form);
@@ -290,8 +289,7 @@ public class DSS_Service {
     }
 
     @SuppressWarnings("rawtypes")
-    private DocumentSignatureService getSignatureService(ASiCContainerType containerType, SignatureForm signatureForm,
-            CommonTrustedCertificateSource TrustedCertificates) {
+    private DocumentSignatureService getSignatureService(ASiCContainerType containerType, SignatureForm signatureForm, CommonTrustedCertificateSource TrustedCertificates) {
 
         CertificateVerifier cv = new CommonCertificateVerifier();
 
@@ -361,8 +359,7 @@ public class DSS_Service {
     }
 
     @SuppressWarnings("rawtypes")
-    private MultipleDocumentsSignatureService getASiCSignatureService(SignatureForm signatureForm,
-            CertificateVerifier cv) {
+    private MultipleDocumentsSignatureService getASiCSignatureService(SignatureForm signatureForm, CertificateVerifier cv) {
         MultipleDocumentsSignatureService service = null;
         switch (signatureForm) {
             case CAdES:
@@ -373,7 +370,7 @@ public class DSS_Service {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        String.format("Not supported signature form for an ASiC container : %s", signatureForm));
+                      String.format("Not supported signature form for an ASiC container : %s", signatureForm));
         }
         return service;
     }
@@ -396,7 +393,7 @@ public class DSS_Service {
                     break;
                 default:
                     throw new IllegalArgumentException(
-                            String.format("Not supported signature form for a time-stamp : %s", signatureForm));
+                          String.format("Not supported signature form for a time-stamp : %s", signatureForm));
             }
 
         } else {
@@ -411,15 +408,14 @@ public class DSS_Service {
                     break;
                 default:
                     throw new IllegalArgumentException(
-                            String.format("Not supported signature form for an ASiC time-stamp : %s", signatureForm));
+                          String.format("Not supported signature form for an ASiC time-stamp : %s", signatureForm));
             }
         }
         return parameters;
     }
 
     @SuppressWarnings({ "rawtypes" })
-    private AbstractSignatureParameters getSignatureParameters(ASiCContainerType containerType,
-            SignatureForm signatureForm) {
+    private AbstractSignatureParameters getSignatureParameters(ASiCContainerType containerType, SignatureForm signatureForm) {
         AbstractSignatureParameters parameters = null;
         if (containerType != null) {
             parameters = getASiCSignatureParameters(containerType, signatureForm);
@@ -439,9 +435,9 @@ public class DSS_Service {
                 case JAdES:
                     JAdESSignatureParameters jadesParameters = new JAdESSignatureParameters();
                     jadesParameters.setJwsSerializationType(JWSSerializationType.JSON_SERIALIZATION); // to allow T+
-                                                                                                      // levels +
-                                                                                                      // parallel
-                                                                                                      // signing
+                    // levels +
+                    // parallel
+                    // signing
                     jadesParameters.setSigDMechanism(SigDMechanism.OBJECT_ID_BY_URI_HASH); // to use by default
                     parameters = jadesParameters;
                     break;
@@ -453,8 +449,7 @@ public class DSS_Service {
     }
 
     @SuppressWarnings({ "rawtypes" })
-    private AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType containerType,
-            SignatureForm signatureForm) {
+    private AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType containerType, SignatureForm signatureForm) {
         AbstractSignatureParameters parameters = null;
         switch (signatureForm) {
             case CAdES:
@@ -469,7 +464,7 @@ public class DSS_Service {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        String.format("Not supported signature form for an ASiC container : %s", signatureForm));
+                      String.format("Not supported signature form for an ASiC container : %s", signatureForm));
         }
         return parameters;
     }

@@ -1,19 +1,15 @@
-package eu.europa.ec.eudi.signer.r3.sca.DTO.SignDocRequest;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest;
 
-import eu.europa.ec.eudi.signer.r3.sca.Validators.SignDocRequestConstraintAnnotation;
-
-import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import eu.europa.ec.eudi.signer.r3.sca.web.validator.SignDocRequestConstraintAnnotation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 
 @SignDocRequestConstraintAnnotation
 public class SignaturesSignDocRequest {
     private String credentialID;
     private String signatureQualifier;
-    private String SAD;
-    private List<DocumentDigestsSignDocRequest> documentDigests;
     @Valid
     private List<DocumentsSignDocRequest> documents;
     private String operationMode = "S";
@@ -23,6 +19,8 @@ public class SignaturesSignDocRequest {
     private Boolean returnValidationInfo = false;
     @NotBlank
     private String request_uri;
+    private String hashAlgorithmOID;
+    private long signature_date;
 
     public SignaturesSignDocRequest() {
     }
@@ -45,26 +43,6 @@ public class SignaturesSignDocRequest {
     @JsonProperty
     public void setSignatureQualifier(String signatureQualifier) {
         this.signatureQualifier = signatureQualifier;
-    }
-
-    @JsonProperty
-    public String getSAD() {
-        return SAD;
-    }
-
-    @JsonProperty
-    public void setSAD(String SAD) {
-        this.SAD = SAD;
-    }
-
-    @JsonProperty
-    public List<DocumentDigestsSignDocRequest> getDocumentDigests() {
-        return documentDigests;
-    }
-
-    @JsonProperty
-    public void setDocumentDigests(List<DocumentDigestsSignDocRequest> documentDigests) {
-        this.documentDigests = documentDigests;
     }
 
     @JsonProperty
@@ -137,13 +115,27 @@ public class SignaturesSignDocRequest {
         this.request_uri = request_uri;
     }
 
+    public String getHashAlgorithmOID() {
+        return hashAlgorithmOID;
+    }
+
+    public void setHashAlgorithmOID(String hashAlgorithmOID) {
+        this.hashAlgorithmOID = hashAlgorithmOID;
+    }
+
+    public long getSignature_date() {
+        return signature_date;
+    }
+
+    public void setSignature_date(long signature_date) {
+        this.signature_date = signature_date;
+    }
+
     @java.lang.Override
     public java.lang.String toString() {
         return "SignaturesSignDocRequest{" +
                 "credentialID=" + credentialID +
                 ", signatureQualifier=" + signatureQualifier +
-                ", SAD=" + SAD +
-                ", documentDigests=" + documentDigests +
                 ", documents=" + documents +
                 ", operationMode=" + operationMode +
                 ", validity_period=" + validity_period +

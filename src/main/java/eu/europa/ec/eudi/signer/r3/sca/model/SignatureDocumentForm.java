@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.Models;
+package eu.europa.ec.eudi.signer.r3.sca.model;
 
 import java.security.cert.X509Certificate;
 

@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.DTO;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto;
 
 import java.util.List;
 
