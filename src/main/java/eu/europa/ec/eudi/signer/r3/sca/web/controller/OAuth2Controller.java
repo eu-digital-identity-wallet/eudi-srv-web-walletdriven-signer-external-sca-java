@@ -96,7 +96,6 @@ public class OAuth2Controller {
             certificateSource.addCertificate(new CertificateToken(cert));
         }
 
-
         // calculate hash
         List<String> hashes = this.signatureService.calculateHashValue(credentialAuthorization.getDocuments(), certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), credentialAuthorization.getHashAlgorithmOID(), date, certificateSource);
         for(String s: hashes){
@@ -111,7 +110,7 @@ public class OAuth2Controller {
 
         OAuth2AuthorizeRequest authorizeRequest = new OAuth2AuthorizeRequest();
         authorizeRequest.setClient_id("sca-client");
-        authorizeRequest.setRedirect_uri("http://localhost:8082/credential/oauth/login/code");
+        authorizeRequest.setRedirect_uri("https://walletcentric.signer.eudiw.dev/credential/oauth/login/code");
         authorizeRequest.setScope("credential");
         authorizeRequest.setCode_challenge(code_challenge);
         authorizeRequest.setCode_challenge_method("S256");
@@ -144,11 +143,11 @@ public class OAuth2Controller {
             String code = request.getParameter("code");
             System.out.println("Code: "+code);
 
-            String url = "http://localhost:9000/oauth2/token?" +
+            String url = "https://walletcentric.signer.eudiw.dev/oauth2/token?" +
                   "grant_type=authorization_code&" +
                   "code=" + code + "&" +
                   "client_id=sca-client&"+
-                  "redirect_uri=http%3A%2F%2Flocalhost%3A8082%2Fcredential%2Foauth%2Flogin%2Fcode&" +
+                  "redirect_uri=https%3A%2F%2Fwalletcentric.signer.eudiw.dev%2Fcredential%2Foauth%2Flogin%2Fcode&" +
                   "code_verifier="+code_verifier;
             System.out.println("Url: "+url);
 
