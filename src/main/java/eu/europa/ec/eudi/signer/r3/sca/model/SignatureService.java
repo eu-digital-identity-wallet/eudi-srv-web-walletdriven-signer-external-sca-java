@@ -48,12 +48,10 @@ public class SignatureService {
             ASiCContainerType aux_asic_ContainerType = DSSService.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm = DSSService.checkSignForm(document.getSignature_format());
 
-            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Payload Received:{"+ "Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +",conformance_level:" +document.getConformance_level()+ ","+
-                  "Signature Format:"+ document.getSignature_format() + "," + "Hash Algorithm OID:"+ hashAlgorithmOID + "," +
-                  "Signature Packaging:"+ document.getSigned_envelope_property() + "," + "Type of Container:"+ document.getContainer() + "}");
+            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Payload Received:{ Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +", conformance_level:" +document.getConformance_level()+ ","+
+                  "Signature Format:"+ document.getSignature_format() + ", Hash Algorithm OID:"+ hashAlgorithmOID + ", Signature Packaging:"+ document.getSigned_envelope_property() + ", Type of Container:"+ document.getContainer() + "}");
 
             SignatureDocumentForm signatureDocumentForm = new SignatureDocumentForm();
-
             signatureDocumentForm.setDocumentToSign(dssDocument);
             signatureDocumentForm.setSignaturePackaging(aux_sign_pack);
             signatureDocumentForm.setContainerType(aux_asic_ContainerType);
@@ -64,7 +62,7 @@ public class SignatureService {
             signatureDocumentForm.setDate(date);
             signatureDocumentForm.setTrustedCertificates(certificateSource);
             signatureDocumentForm.setSignatureForm(signatureForm);
-            signatureDocumentForm.setCertChain(new ArrayList<>());
+            signatureDocumentForm.setCertChain(certificateChain);
             signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
 
             byte[] dataToBeSigned = dssClient.DataToBeSignedData(signatureDocumentForm);
@@ -79,37 +77,25 @@ public class SignatureService {
         return hashes;
     }
 
-
     // i need the signing certificate before hand
-    public SignaturesSignDocResponse handleDocumentsSignDocRequest(SignaturesSignDocRequest signDocRequest, String authorizationBearerHeader, X509Certificate certificate, List<X509Certificate> certificateChain, List<String> signAlgo, Date date) throws Exception {
-        CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
-
+    public SignaturesSignDocResponse handleDocumentsSignDocRequest(SignaturesSignDocRequest signDocRequest, String authorizationBearerHeader, X509Certificate certificate, List<X509Certificate> certificateChain, List<String> signAlgo, Date date, CommonTrustedCertificateSource certificateSource) throws Exception {
         List<String> hashes = calculateHashValue(signDocRequest.getDocuments(), certificate, certificateChain, signDocRequest.getHashAlgorithmOID(), date, certificateSource);
 
-        SignaturesSignHashResponse signHashResponse = null;
-        try {
-            // As the current operation mode only supported is "S", the validity_period and response_uri do not need to be defined
-            SignaturesSignHashRequest signHashRequest = new SignaturesSignHashRequest(signDocRequest.getCredentialID(),
-                  null, hashes, signDocRequest.getHashAlgorithmOID(), signAlgo.get(0), null, signDocRequest.getOperationMode(),
-                  -1, null, signDocRequest.getClientData());
-
-            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Request to QTSP.");
-            signHashResponse = qtspClient.requestSignHash(signDocRequest.getRequest_uri(), signHashRequest, authorizationBearerHeader);
-            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Response received.");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        assert signHashResponse != null;
-        if(signHashResponse.getSignatures().size() != signDocRequest.getDocuments().size()){
-            return new SignaturesSignDocResponse();
-        }
-
+        SignaturesSignHashRequest signHashRequest = new SignaturesSignHashRequest(signDocRequest.getCredentialID(),null,
+              hashes, signDocRequest.getHashAlgorithmOID(), signAlgo.get(0), null, signDocRequest.getOperationMode(),
+              -1, null, signDocRequest.getClientData());
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Request to QTSP.");
+        SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(signDocRequest.getRequest_uri(), signHashRequest, authorizationBearerHeader);
         List<String> allSignaturesObjects = signHashResponse.getSignatures();
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Response received.");
+
+        if(signHashResponse.getSignatures().size() != signDocRequest.getDocuments().size()) return new SignaturesSignDocResponse();
+
         List<String> DocumentWithSignature = new ArrayList<>();
         for(int i = 0; i < signDocRequest.getDocuments().size(); i++){
             DocumentsSignDocRequest document = signDocRequest.getDocuments().get(i);
+            String signatureValue = signHashResponse.getSignatures().get(i);
+
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
             SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
@@ -131,9 +117,8 @@ public class SignatureService {
             signatureDocumentForm.setSignatureForm(signatureForm);
             signatureDocumentForm.setCertChain(certificateChain);
             signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
+            signatureDocumentForm.setSignatureValue(Base64.getDecoder().decode(signatureValue));
 
-            byte[] signature = Base64.getDecoder().decode(signHashResponse.getSignatures().get(i));
-            signatureDocumentForm.setSignatureValue(signature);
             DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
             fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Document successfully signed.");
 
@@ -187,18 +172,16 @@ public class SignatureService {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                     docSigned.save("tests/exampleSigned.pdf");
 
-                    File file = new File("tests/exampleSigned.pdf");
-                    byte[] pdfBytes = Files.readAllBytes(file.toPath());
+                    // File file = new File("tests/exampleSigned.pdf");
+                    // byte[] pdfBytes = Files.readAllBytes(file.toPath());
 
-                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(docSigned.openStream().readAllBytes()));
                 }
             } catch (Exception e) {
                 fileLogger.error("invalid request: "+ e.getMessage());
                 throw e;
             }
         }
-
-        allSignaturesObjects.addAll(signHashResponse.getSignatures());
 
         ValidationInfoSignDocResponse validationInfo = null;
         if (signDocRequest.getReturnValidationInfo()) {

@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public class OAuth2AuthorizeRequest {
     @NotBlank
+    private String response_type = "code";
+    @NotBlank
     private String client_id;
     private String redirect_uri;
     private String scope;
@@ -25,6 +27,14 @@ public class OAuth2AuthorizeRequest {
     private String description;
     private String account_token;
     private String clientData;
+
+    public String getResponse_type() {
+        return response_type;
+    }
+
+    public void setResponse_type(String response_type) {
+        this.response_type = response_type;
+    }
 
     public String getClient_id() {
         return client_id;

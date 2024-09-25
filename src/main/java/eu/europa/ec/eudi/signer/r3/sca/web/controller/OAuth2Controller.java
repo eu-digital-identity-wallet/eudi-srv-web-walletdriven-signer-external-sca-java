@@ -15,19 +15,18 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.sql.CommonDataSource;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -42,31 +41,12 @@ public class OAuth2Controller {
     private final QtspClient qtspClient;
     private final CredentialsService credentialsService;
     private final SignatureService signatureService;
-    private final CertificateToken TSACertificateToken;
 
-
-    public OAuth2Controller(@Autowired QtspClient qtspClient,
-                            @Autowired CredentialsService credentialsService,
+    public OAuth2Controller(@Autowired QtspClient qtspClient, @Autowired CredentialsService credentialsService,
                             @Autowired SignatureService signatureService) throws Exception{
         this.qtspClient = qtspClient;
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
-
-        Properties properties = new Properties();
-        InputStream configStream = getClass().getClassLoader().getResourceAsStream("config.properties");
-        if (configStream == null) {
-            throw new Exception("Arquivo config.properties não encontrado!");
-        }
-        properties.load(configStream);
-
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        String certificateStringPath = properties.getProperty("TrustedCertificates");
-        if (certificateStringPath == null || certificateStringPath.isEmpty()) {
-            throw new Exception("Trusted Certificate Path not found in configuration file.");
-        }
-        FileInputStream certInput= new FileInputStream(certificateStringPath);
-        X509Certificate TSACertificate = (X509Certificate) certFactory.generateCertificate(certInput);
-        this.TSACertificateToken = new CertificateToken(TSACertificate);
     }
 
     private String generateNonce(String root) throws Exception{
@@ -84,33 +64,30 @@ public class OAuth2Controller {
     public AuthResponseTemporary credential_authorization(
           @RequestBody CredentialAuthorizationRequest credentialAuthorization,
           @RequestHeader (name="Authorization") String authorizationBearerHeader) throws Exception{
-
         System.out.println("authorization: "+authorizationBearerHeader);
         System.out.println("credential authorization request: "+credentialAuthorization);
-        CredentialsService.CertificateResponse certificateResponse = this.credentialsService.getCertificateAndCertificateChain(credentialAuthorization.getResourceServerUrl(), credentialAuthorization.getCredentialID(), authorizationBearerHeader);
 
         Date date = new Date();
-        CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
-        certificateSource.addCertificate(this.TSACertificateToken);
-        for(X509Certificate cert: certificateResponse.getCertificateChain()){
-            certificateSource.addCertificate(new CertificateToken(cert));
+        CredentialsService.CertificateResponse certificateResponse = this.credentialsService.getCertificateAndCertificateChain(credentialAuthorization.getResourceServerUrl(), credentialAuthorization.getCredentialID(), authorizationBearerHeader);
+
+        saveCertificateToPem(certificateResponse.getCertificate(), "cert_0.pem");
+        int i = 1;
+        for (X509Certificate c: certificateResponse.getCertificateChain()){
+            saveCertificateToPem(c, "cert_"+i+".pem");
+            i++;
         }
 
-        // calculate hash
+        CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource(certificateResponse.getCertificateChain());
+
         List<String> hashes = this.signatureService.calculateHashValue(credentialAuthorization.getDocuments(), certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), credentialAuthorization.getHashAlgorithmOID(), date, certificateSource);
-        for(String s: hashes){
-            System.out.println("Oauth2: "+ s);
-        }
-
         String hash = String.join(",", hashes);
-        System.out.println("hash: "+hash);
 
         // generate code_challenge, code_challenge_method, code_verifier
         String code_challenge = generateNonce("root");
 
         OAuth2AuthorizeRequest authorizeRequest = new OAuth2AuthorizeRequest();
         authorizeRequest.setClient_id("sca-client");
-        authorizeRequest.setRedirect_uri("https://walletcentric.signer.eudiw.dev/credential/oauth/login/code");
+        authorizeRequest.setRedirect_uri("http://localhost:8086/credential/oauth/login/code");
         authorizeRequest.setScope("credential");
         authorizeRequest.setCode_challenge(code_challenge);
         authorizeRequest.setCode_challenge_method("S256");
@@ -121,10 +98,35 @@ public class OAuth2Controller {
         authorizeRequest.setHashes(hash);
         authorizeRequest.setHashAlgorithmOID(credentialAuthorization.getHashAlgorithmOID());
 
+        /*
+        JSONArray documentDigests = new JSONArray();
+        for(String h: hashes){
+            JSONObject documentDigest = new JSONObject();
+            documentDigest.put("hash", h);
+            documentDigest.put("label", "This is some document hash");
+            documentDigests.put(documentDigest);
+        }
+
+        JSONObject authorization_details = new JSONObject();
+        authorization_details.put("type", "credential");
+        authorization_details.put("credentialID", URLEncoder.encode(credentialAuthorization.getCredentialID(), StandardCharsets.UTF_8));
+        authorization_details.put("documentDigests", documentDigests);
+        authorization_details.put("hashAlgorithmOID", credentialAuthorization.getHashAlgorithmOID());
+        System.out.println(authorization_details);
+
+        OAuth2AuthorizeRequest authorizeRequest = new OAuth2AuthorizeRequest();
+        authorizeRequest.setResponse_type("code");
+        authorizeRequest.setClient_id("sca-client");
+        authorizeRequest.setRedirect_uri("http://localhost:8086/credential/oauth/login/code");
+        authorizeRequest.setCode_challenge(code_challenge);
+        authorizeRequest.setCode_challenge_method("S256");
+        authorizeRequest.setLang("pt-PT");
+        authorizeRequest.setState("12345678");
+        authorizeRequest.setAuthorization_details(URLEncoder.encode(authorization_details.toString(), StandardCharsets.UTF_8));
+        System.out.println(authorizeRequest);*/
+
         AuthResponseTemporary responseTemporary = this.qtspClient.requestOAuth2Authorize(credentialAuthorization.getAuthorizationServerUrl(), authorizeRequest, authorizationBearerHeader);
-        System.out.println(date.getTime());
         responseTemporary.setSignature_date(date.getTime());
-        System.out.println("-----------------------------");
         return responseTemporary;
     }
 
@@ -143,11 +145,11 @@ public class OAuth2Controller {
             String code = request.getParameter("code");
             System.out.println("Code: "+code);
 
-            String url = "https://walletcentric.signer.eudiw.dev/oauth2/token?" +
+            String url = "http://localhost:8084/oauth2/token?" +
                   "grant_type=authorization_code&" +
                   "code=" + code + "&" +
                   "client_id=sca-client&"+
-                  "redirect_uri=https%3A%2F%2Fwalletcentric.signer.eudiw.dev%2Fcredential%2Foauth%2Flogin%2Fcode&" +
+                  "redirect_uri=http%3A%2F%2Flocalhost:8086%2Fcredential%2Foauth%2Flogin%2Fcode&" +
                   "code_verifier="+code_verifier;
             System.out.println("Url: "+url);
 
@@ -187,4 +189,18 @@ public class OAuth2Controller {
         }
         return null;
     }
+
+    public static void saveCertificateToPem(X509Certificate certificate, String filePath) throws IOException, CertificateEncodingException {
+        String pemCertificate = convertToPem(certificate);
+        try (Writer writer = new FileWriter(filePath)) {
+            writer.write(pemCertificate);
+        }
+    }
+
+    public static String convertToPem(X509Certificate certificate) throws CertificateEncodingException {
+        byte[] encodedCert = certificate.getEncoded();
+        String base64Cert = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(encodedCert);
+        return "-----BEGIN CERTIFICATE-----\n" + base64Cert + "\n-----END CERTIFICATE-----\n";
+    }
+
 }
