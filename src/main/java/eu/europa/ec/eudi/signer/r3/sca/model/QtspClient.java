@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class QtspClient {
 
-    public SignaturesSignHashResponse requestSignHash(String url, SignaturesSignHashRequest signHashRequest, String authorizationBearerHeader) throws Exception {
+    public SignaturesSignHashResponse requestSignHash(String url, SignaturesSignHashRequest signHashRequest, String authorizationBearerHeader) {
         System.out.println("url: "+url);
         System.out.println("body: "+signHashRequest.toString());
         System.out.println("header: "+authorizationBearerHeader);

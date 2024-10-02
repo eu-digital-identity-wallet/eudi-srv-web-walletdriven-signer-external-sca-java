@@ -1,7 +1,5 @@
 package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 
-import eu.europa.ec.eudi.signer.r3.sca.model.DSSService;
-import eu.europa.ec.eudi.signer.r3.sca.model.QtspClient;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest.SignaturesSignDocRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignaturesSignDocResponse;
 import eu.europa.ec.eudi.signer.r3.sca.model.CredentialsService;
@@ -15,8 +13,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Properties;
-
-import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +33,6 @@ public class SignaturesController {
     private final CredentialsService credentialsService;
     private final CertificateToken TSACertificateToken;
 
-
     public SignaturesController(@Autowired CredentialsService credentialsService, @Autowired SignatureService signatureService) throws Exception {
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
@@ -57,13 +52,14 @@ public class SignaturesController {
         FileInputStream certInput= new FileInputStream(certificateStringPath);
         X509Certificate TSACertificate = (X509Certificate) certFactory.generateCertificate(certInput);
         this.TSACertificateToken = new CertificateToken(TSACertificate);
+        certInput.close();
     }
 
     @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
     public SignaturesSignDocResponse signDoc(@Valid @RequestBody SignaturesSignDocRequest signDocRequest, @RequestHeader (name="Authorization") String authorizationBearerHeader) {
         fileLogger.info("Entry /signDoc");
-        fileLogger.info("Signature Document Request:" + signDocRequest);
-        fileLogger.info("Authorization Header: "+authorizationBearerHeader);
+        fileLogger.info("Signature Document Request:{}", signDocRequest);
+        fileLogger.info("Authorization Header: {}", authorizationBearerHeader);
 
         if (signDocRequest.getCredentialID() == null) {
             System.out.println("To be defined: CredentialID needs to be defined in this implementation.");
@@ -77,20 +73,11 @@ public class SignaturesController {
             return new SignaturesSignDocResponse();
         }
 
-        if (signDocRequest.getOperationMode().equals("A")) {
-            System.out.println("To be defined: the current solution doesn't support assynchronious responses.");
-            return new SignaturesSignDocResponse();
-        }
-
         if (signDocRequest.getDocuments() != null) {
             try {
-                CommonTrustedCertificateSource commonTrustedCertificateSource = new CommonTrustedCertificateSource();
-                commonTrustedCertificateSource.addCertificate(this.TSACertificateToken);
-                for (X509Certificate cert: certificateResponse.getCertificateChain()){
-                    commonTrustedCertificateSource.addCertificate(new CertificateToken(cert));
-                }
                 Date date = new Date(signDocRequest.getSignature_date());
-                return this.signatureService.handleDocumentsSignDocRequest(signDocRequest, authorizationBearerHeader, certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), certificateResponse.getSignAlgo(), date);
+                CommonTrustedCertificateSource commonTrustedCertificateSource = this.credentialsService.getCommonTrustedCertificateSource(certificateResponse.getCertificateChain());
+                return this.signatureService.handleDocumentsSignDocRequest(signDocRequest, authorizationBearerHeader, certificateResponse.getCertificate(), certificateResponse.getCertificateChain(), certificateResponse.getSignAlgo(), date, commonTrustedCertificateSource);
             } catch (Exception e) {
                 fileLogger.error(e.getMessage());
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response");

@@ -217,32 +217,28 @@ public class DSSService {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public DSSDocument signDocument(SignatureDocumentForm form) {
 
-        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
-              form.getTrustedCertificates());
+        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
 
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"signDocument Service created.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +", signDocument Service created.");
 
         AbstractSignatureParameters parameters = fillParameters(form);
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Parameters Filled.");
+        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +", DataToBeSignedData Parameters Filled.");
+
+        System.out.println("######: "+parameters.getCertificateChain().size());
 
         DSSDocument toSignDocument = form.getDocumentToSign();
-        SignatureAlgorithm sigAlgorithm = SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(),
-              form.getDigestAlgorithm());
 
         SignatureValue signatureValue = new SignatureValue();
-        signatureValue.setAlgorithm(sigAlgorithm);
+        signatureValue.setAlgorithm(SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(), form.getDigestAlgorithm()));
         signatureValue.setValue(form.getSignatureValue());
 
-        DSSDocument signedDocument = service.signDocument(toSignDocument, parameters, signatureValue);
-        return signedDocument;
-
+        return service.signDocument(toSignDocument, parameters, signatureValue);
     }
 
     @SuppressWarnings({ "rawtypes" })
     private AbstractSignatureParameters fillParameters(SignatureDocumentForm form) {
 
-        AbstractSignatureParameters parameters = getSignatureParameters(form.getContainerType(),
-              form.getSignatureForm());
+        AbstractSignatureParameters parameters = getSignatureParameters(form.getContainerType(),  form.getSignatureForm());
         parameters.setSignaturePackaging(form.getSignaturePackaging());
 
         fillParameters(parameters, form);
@@ -255,8 +251,6 @@ public class DSSService {
 
         parameters.setSignatureLevel(form.getSignatureLevel());
         parameters.setDigestAlgorithm(form.getDigestAlgorithm());
-        // parameters.setEncryptionAlgorithm(form.getEncryptionAlgorithm()); retrieved
-        // from certificate
         parameters.bLevel().setSigningDate(form.getDate());
 
         CertificateToken signingCertificate = new CertificateToken(form.getCertificate());
@@ -267,7 +261,6 @@ public class DSSService {
         for (X509Certificate cert : certificateChainBytes) {
             certChainToken.add(new CertificateToken(cert));
         }
-
         parameters.setCertificateChain(certChainToken);
 
         fillTimestampParameters(parameters, form);

@@ -14,13 +14,10 @@ public class SignaturesSignDocRequestValidator
 
     @Override
     public boolean isValid(SignaturesSignDocRequest request, ConstraintValidatorContext context) {
-        if (!request.getOperationMode().equals("A") && !request.getOperationMode().equals("S"))
-            return false;
-
         if (request.getRequest_uri() == null)
             return false;
 
-        return (request.getCredentialID() != null || request.getSignatureQualifier() != null) && (request.getDocuments() != null);
+        return (request.getCredentialID() != null) && (request.getDocuments() != null);
     }
 
 }

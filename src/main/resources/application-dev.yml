@@ -1,0 +1,7 @@
+oauth-client:
+  client-id: "sca-client"
+  client-secret: "somesecret1"
+  client-authentication-methods:
+    - "client_secret_basic"
+  redirect-uri: "https://walletcentric.signer.eudiw.dev/credential/oauth/login/code"
+  scope: "credential"
