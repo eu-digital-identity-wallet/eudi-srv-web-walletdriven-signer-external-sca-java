@@ -73,11 +73,6 @@ public class SignaturesController {
             return new SignaturesSignDocResponse();
         }
 
-        if (signDocRequest.getOperationMode().equals("A")) {
-            System.out.println("To be defined: the current solution doesn't support assynchronious responses.");
-            return new SignaturesSignDocResponse();
-        }
-
         if (signDocRequest.getDocuments() != null) {
             try {
                 Date date = new Date(signDocRequest.getSignature_date());

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: sca
+
+server:
+  port: 8086
+
+logging:
+  config: logback.xml
+  level:
+    org.hibernate: ERROR
+    org.springframework.web: DEBUG
+
+oauth-client:
+  client-id: "sca-client"
+  client-secret: "somesecret1"
+  client-authentication-methods:
+    - "client_secret_basic"
+  redirect-uri: "http://localhost:8086/credential/oauth/login/code"
+  scope: "credential"

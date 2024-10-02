@@ -82,7 +82,7 @@ public class SignatureService {
         List<String> hashes = calculateHashValue(signDocRequest.getDocuments(), certificate, certificateChain, signDocRequest.getHashAlgorithmOID(), date, certificateSource);
 
         SignaturesSignHashRequest signHashRequest = new SignaturesSignHashRequest(signDocRequest.getCredentialID(),null,
-              hashes, signDocRequest.getHashAlgorithmOID(), signAlgo.get(0), null, signDocRequest.getOperationMode(),
+              hashes, signDocRequest.getHashAlgorithmOID(), signAlgo.get(0), null, "S",
               -1, null, signDocRequest.getClientData());
         fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",HTTP Request to QTSP.");
         SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(signDocRequest.getRequest_uri(), signHashRequest, authorizationBearerHeader);

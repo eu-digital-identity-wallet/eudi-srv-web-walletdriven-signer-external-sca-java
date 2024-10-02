@@ -9,18 +9,14 @@ import java.util.List;
 @SignDocRequestConstraintAnnotation
 public class SignaturesSignDocRequest {
     private String credentialID;
-    private String signatureQualifier;
     @Valid
     private List<DocumentsSignDocRequest> documents;
-    private String operationMode = "S";
-    private int validity_period = -1;
-    private String response_uri;
-    private String clientData;
     private Boolean returnValidationInfo = false;
     @NotBlank
     private String request_uri;
     private String hashAlgorithmOID;
     private long signature_date;
+    private String clientData;
 
     public SignaturesSignDocRequest() {
     }
@@ -36,16 +32,6 @@ public class SignaturesSignDocRequest {
     }
 
     @JsonProperty
-    public String getSignatureQualifier() {
-        return signatureQualifier;
-    }
-
-    @JsonProperty
-    public void setSignatureQualifier(String signatureQualifier) {
-        this.signatureQualifier = signatureQualifier;
-    }
-
-    @JsonProperty
     public List<DocumentsSignDocRequest> getDocuments() {
         return documents;
     }
@@ -53,36 +39,6 @@ public class SignaturesSignDocRequest {
     @JsonProperty
     public void setDocuments(List<DocumentsSignDocRequest> documents) {
         this.documents = documents;
-    }
-
-    @JsonProperty
-    public String getOperationMode() {
-        return operationMode;
-    }
-
-    @JsonProperty
-    public void setOperationMode(String operationMode) {
-        this.operationMode = operationMode;
-    }
-
-    @JsonProperty
-    public int getValidity_period() {
-        return validity_period;
-    }
-
-    @JsonProperty
-    public void setValidity_period(int validity_period) {
-        this.validity_period = validity_period;
-    }
-
-    @JsonProperty
-    public String getResponse_uri() {
-        return response_uri;
-    }
-
-    @JsonProperty
-    public void setResponse_uri(String response_uri) {
-        this.response_uri = response_uri;
     }
 
     @JsonProperty
@@ -135,11 +91,7 @@ public class SignaturesSignDocRequest {
     public java.lang.String toString() {
         return "SignaturesSignDocRequest{" +
                 "credentialID=" + credentialID +
-                ", signatureQualifier=" + signatureQualifier +
                 ", documents=" + documents +
-                ", operationMode=" + operationMode +
-                ", validity_period=" + validity_period +
-                ", response_uri=" + response_uri +
                 ", clientData=" + clientData +
                 ", returnValidationInfo=" + returnValidationInfo +
                 ", request_uri=" + request_uri +

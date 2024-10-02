@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Successful Authentication</title>
+</head>
+<body>
+    <p>Successful Authentication</p>
+    <form th:action="${url}" method="post" id="theForm">
+        <input type="hidden" name="access_token" th:value="${body}">
+        <input type="submit" value="Continue" title="Continue">
+    </form>
+</body>
+</html>
