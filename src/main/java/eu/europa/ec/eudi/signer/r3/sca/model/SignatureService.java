@@ -1,11 +1,11 @@
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest.SignaturesSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignaturesSignHashRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignaturesSignHashResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.ValidationInfoSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signHash.SignaturesSignHashRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signHash.SignaturesSignHashResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.ValidationInfoSignDocResponse;
 import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
@@ -29,10 +29,10 @@ import java.util.List;
 public class SignatureService {
 
     private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
-    private final QtspClient qtspClient;
+    private final QTSPClient qtspClient;
     private final DSSService dssClient;
 
-    public SignatureService(@Autowired QtspClient qtspClient, @Autowired DSSService dssClient){
+    public SignatureService(@Autowired QTSPClient qtspClient, @Autowired DSSService dssClient){
         this.qtspClient = qtspClient;
         this.dssClient = dssClient;
     }
@@ -77,7 +77,6 @@ public class SignatureService {
         return hashes;
     }
 
-    // i need the signing certificate before hand
     public SignaturesSignDocResponse handleDocumentsSignDocRequest(SignaturesSignDocRequest signDocRequest, String authorizationBearerHeader, X509Certificate certificate, List<X509Certificate> certificateChain, List<String> signAlgo, Date date, CommonTrustedCertificateSource certificateSource) throws Exception {
         List<String> hashes = calculateHashValue(signDocRequest.getDocuments(), certificate, certificateChain, signDocRequest.getHashAlgorithmOID(), date, certificateSource);
 
@@ -125,45 +124,32 @@ public class SignatureService {
             try {
                 if (document.getContainer().equals("ASiC-E")) {
                     if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
-
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-e+zip"));
                         docSigned.save("tests/exampleSigned.cse");
-
                         File file = new File("tests/exampleSigned.cse");
                         byte[] pdfBytes = Files.readAllBytes(file.toPath());
-
                         DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
                     }
-
                 }
                 else if (document.getContainer().equals("ASiC-S")) {
                     if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
-
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-s+zip"));
                         docSigned.save("tests/exampleSigned.scs");
-
                         File file = new File("tests/exampleSigned.scs");
                         byte[] pdfBytes = Files.readAllBytes(file.toPath());
-
                         DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
                     }
-
                 }
                 else if (document.getSignature_format().equals("J")) {
-
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
                     docSigned.save("tests/exampleSigned.json");
-
                     File file = new File("tests/exampleSigned.json");
                     byte[] jsonBytes = Files.readAllBytes(file.toPath());
-
                     DocumentWithSignature.add(Base64.getEncoder().encodeToString(jsonBytes));
                 }
                 else if (document.getSignature_format().equals("X")) {
-
                     docSigned.setMimeType(MimeType.fromMimeTypeString("text/xml"));
                     docSigned.save("tests/exampleSigned.xml");
-
                     File file = new File("tests/exampleSigned.xml");
                     byte[] xmlBytes = Files.readAllBytes(file.toPath());
                     DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
@@ -171,10 +157,6 @@ public class SignatureService {
                 else {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
                     docSigned.save("tests/exampleSigned.pdf");
-
-                    // File file = new File("tests/exampleSigned.pdf");
-                    // byte[] pdfBytes = Files.readAllBytes(file.toPath());
-
                     DocumentWithSignature.add(Base64.getEncoder().encodeToString(docSigned.openStream().readAllBytes()));
                 }
             } catch (Exception e) {
@@ -190,4 +172,97 @@ public class SignatureService {
 
         return new SignaturesSignDocResponse(DocumentWithSignature, allSignaturesObjects, null, validationInfo);
     }
+
+
+    public SignaturesSignDocResponse buildSignedDocument(
+          List<DocumentsSignDocRequest> documents, String hashAlgorithmOID, boolean returnValidationInfo,
+          X509Certificate certificate, List<X509Certificate> certificateChain, Date date,
+          CommonTrustedCertificateSource certificateSource, List<String> signatureObjects) throws Exception {
+
+        if(signatureObjects.size() != documents.size()) return new SignaturesSignDocResponse();
+
+        List<String> DocumentWithSignature = new ArrayList<>();
+        for(int i = 0; i < documents.size(); i++){
+            DocumentsSignDocRequest document = documents.get(i);
+            String signatureValue = signatureObjects.get(i);
+
+            DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
+
+            SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
+            DigestAlgorithm aux_digest_alg = DSSService.checkSignAlgDigest(hashAlgorithmOID);
+            SignaturePackaging aux_sign_pack = DSSService.checkEnvProps(document.getSigned_envelope_property());
+            ASiCContainerType aux_asic_ContainerType = DSSService.checkASiCContainerType(document.getContainer());
+            SignatureForm signatureForm= DSSService.checkSignForm(document.getSignature_format());
+
+            SignatureDocumentForm signatureDocumentForm = new SignatureDocumentForm();
+            signatureDocumentForm.setDocumentToSign(dssDocument);
+            signatureDocumentForm.setSignaturePackaging(aux_sign_pack);
+            signatureDocumentForm.setContainerType(aux_asic_ContainerType);
+            signatureDocumentForm.setSignatureLevel(aux_sign_level);
+            signatureDocumentForm.setDigestAlgorithm(aux_digest_alg);
+            signatureDocumentForm.setSignatureForm(signatureForm);
+            signatureDocumentForm.setCertificate(certificate);
+            signatureDocumentForm.setDate(date);
+            signatureDocumentForm.setTrustedCertificates(certificateSource);
+            signatureDocumentForm.setSignatureForm(signatureForm);
+            signatureDocumentForm.setCertChain(certificateChain);
+            signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
+            signatureDocumentForm.setSignatureValue(Base64.getDecoder().decode(signatureValue));
+
+            DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
+            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Document successfully signed.");
+
+            try {
+                if (document.getContainer().equals("ASiC-E")) {
+                    if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
+                        docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-e+zip"));
+                        docSigned.save("tests/exampleSigned.cse");
+                        File file = new File("tests/exampleSigned.cse");
+                        byte[] pdfBytes = Files.readAllBytes(file.toPath());
+                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                    }
+                }
+                else if (document.getContainer().equals("ASiC-S")) {
+                    if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
+                        docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-s+zip"));
+                        docSigned.save("tests/exampleSigned.scs");
+                        File file = new File("tests/exampleSigned.scs");
+                        byte[] pdfBytes = Files.readAllBytes(file.toPath());
+                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
+                    }
+                }
+                else if (document.getSignature_format().equals("J")) {
+                    docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
+                    docSigned.save("tests/exampleSigned.json");
+                    File file = new File("tests/exampleSigned.json");
+                    byte[] jsonBytes = Files.readAllBytes(file.toPath());
+                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(jsonBytes));
+                }
+                else if (document.getSignature_format().equals("X")) {
+                    docSigned.setMimeType(MimeType.fromMimeTypeString("text/xml"));
+                    docSigned.save("tests/exampleSigned.xml");
+                    File file = new File("tests/exampleSigned.xml");
+                    byte[] xmlBytes = Files.readAllBytes(file.toPath());
+                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
+                }
+                else {
+                    docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
+                    docSigned.save("tests/exampleSigned.pdf");
+                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(docSigned.openStream().readAllBytes()));
+                }
+            } catch (Exception e) {
+                fileLogger.error("invalid request: "+ e.getMessage());
+                throw e;
+            }
+        }
+
+        ValidationInfoSignDocResponse validationInfo = null;
+        if (returnValidationInfo) {
+            validationInfo = new ValidationInfoSignDocResponse();
+        }
+
+        return new SignaturesSignDocResponse(DocumentWithSignature, signatureObjects, null, validationInfo);
+    }
+
+
 }

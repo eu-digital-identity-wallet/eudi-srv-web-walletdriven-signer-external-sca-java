@@ -1,7 +1,6 @@
 package eu.europa.ec.eudi.signer.r3.sca.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.util.Set;
 
 @ConfigurationProperties(prefix = "oauth-client")
@@ -11,6 +10,8 @@ public class OAuthClientConfig {
     private Set<String> clientAuthenticationMethods;
     private String redirectUri;
     private String scope;
+    private String defaultAuthorizationServerUrl;
+    private String appRedirectUri;
 
     public String getClientId() {
         return clientId;
@@ -50,5 +51,21 @@ public class OAuthClientConfig {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public String getDefaultAuthorizationServerUrl() {
+        return defaultAuthorizationServerUrl;
+    }
+
+    public void setDefaultAuthorizationServerUrl(String defaultAuthorizationServerUrl) {
+        this.defaultAuthorizationServerUrl = defaultAuthorizationServerUrl;
+    }
+
+    public String getAppRedirectUri() {
+        return appRedirectUri;
+    }
+
+    public void setAppRedirectUri(String appRedirectUri) {
+        this.appRedirectUri = appRedirectUri;
     }
 }
