@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc;
 
 import jakarta.validation.constraints.NotBlank;
 

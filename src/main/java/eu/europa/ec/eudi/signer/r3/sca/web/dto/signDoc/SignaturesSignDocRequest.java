@@ -1,15 +1,11 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.europa.ec.eudi.signer.r3.sca.web.validator.SignDocRequestConstraintAnnotation;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
-@SignDocRequestConstraintAnnotation
 public class SignaturesSignDocRequest {
     private String credentialID;
-    @Valid
     private List<DocumentsSignDocRequest> documents;
     private Boolean returnValidationInfo = false;
     @NotBlank
@@ -87,14 +83,16 @@ public class SignaturesSignDocRequest {
         this.signature_date = signature_date;
     }
 
-    @java.lang.Override
-    public java.lang.String toString() {
+    @Override
+    public String toString() {
         return "SignaturesSignDocRequest{" +
-                "credentialID=" + credentialID +
-                ", documents=" + documents +
-                ", clientData=" + clientData +
-                ", returnValidationInfo=" + returnValidationInfo +
-                ", request_uri=" + request_uri +
-                '}';
+              "credentialID='" + credentialID + '\'' +
+              ", documents=" + documents +
+              ", returnValidationInfo=" + returnValidationInfo +
+              ", request_uri='" + request_uri + '\'' +
+              ", hashAlgorithmOID='" + hashAlgorithmOID + '\'' +
+              ", signature_date=" + signature_date +
+              ", clientData='" + clientData + '\'' +
+              '}';
     }
 }

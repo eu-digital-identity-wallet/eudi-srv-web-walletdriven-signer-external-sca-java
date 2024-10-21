@@ -1,6 +1,9 @@
 spring:
   application:
     name: sca
+  profiles:
+    include:
+      - "auth"
 
 server:
   port: 8086
@@ -9,12 +12,8 @@ logging:
   config: logback.xml
   level:
     org.hibernate: ERROR
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
 
-oauth-client:
-  client-id: "sca-client"
-  client-secret: "somesecret1"
-  client-authentication-methods:
-    - "client_secret_basic"
-  redirect-uri: "http://localhost:8086/credential/oauth/login/code"
-  scope: "credential"
+trusted-certificate:
+  filename: "src/main/resources/TSA_CC.pem"
+  time-stamp-authority: "http://ts.cartaodecidadao.pt/tsa/server"

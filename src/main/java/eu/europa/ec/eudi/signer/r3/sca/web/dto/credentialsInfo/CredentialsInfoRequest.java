@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.CredentialsInfo;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.credentialsInfo;
 
 public class CredentialsInfoRequest {
     private String credentialID;

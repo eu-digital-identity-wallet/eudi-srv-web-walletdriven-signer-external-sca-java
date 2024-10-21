@@ -1,10 +1,8 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.validator.DocumentsSignDocConstraintAnnotation;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
-@DocumentsSignDocConstraintAnnotation
 public class DocumentsSignDocRequest {
     @NotBlank
     private String document;

@@ -1,4 +1,4 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.CredentialsInfo.CredentialsInfo;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.credentialsInfo;
 
 import java.util.List;
 

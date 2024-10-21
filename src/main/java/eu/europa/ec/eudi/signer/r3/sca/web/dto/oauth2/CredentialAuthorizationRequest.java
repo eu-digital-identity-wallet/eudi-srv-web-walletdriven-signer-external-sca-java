@@ -1,10 +1,9 @@
-package eu.europa.ec.eudi.signer.r3.sca.web.dto;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignDocRequest.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
 import java.util.List;
 
 public class CredentialAuthorizationRequest {
-
     private String credentialID;
     private String numSignatures;
     private List<DocumentsSignDocRequest> documents;
