@@ -1,5 +1,6 @@
 package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 
+import eu.europa.ec.eudi.signer.r3.sca.config.OAuthClientConfig;
 import eu.europa.ec.eudi.signer.r3.sca.model.OAuth2Service;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -17,9 +18,11 @@ public class CallbackController {
     private static final Logger logger = LoggerFactory.getLogger(CallbackController.class);
 
     private final OAuth2Service oAuth2Service;
+    private final OAuthClientConfig oAuthClientConfig;
 
-    public CallbackController(@Autowired OAuth2Service oAuth2Service) {
+    public CallbackController(@Autowired OAuth2Service oAuth2Service, @Autowired OAuthClientConfig oAuthClientConfig) {
         this.oAuth2Service = oAuth2Service;
+        this.oAuthClientConfig = oAuthClientConfig;
     }
 
     @GetMapping(value="/credential/oauth/login/code")
@@ -27,7 +30,7 @@ public class CallbackController {
         try {
             JSONObject json = this.oAuth2Service.getOAuth2Token(code);
             model.addAttribute("body", json.toString());
-			model.addAttribute("url", "http://127.0.0.1:5000/tester/oauth/credential/login/code");
+			model.addAttribute("url", this.oAuthClientConfig.getAppRedirectUri());
             return "successful_authentication";
         } catch (Exception e){
             logger.error(e.getMessage());

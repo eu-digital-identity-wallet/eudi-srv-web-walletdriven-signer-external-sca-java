@@ -2,13 +2,14 @@ package eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash;
 
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CalculateHashRequest {
 
 	private List<DocumentsSignDocRequest> documents;
-	private String signingCertificate;
-	private List<String> certificateChain;
+	private String endEntityCertificate;
+	private List<String> certificateChain = new ArrayList<>();
 	private String hashAlgorithmOID;
 
 	public List<DocumentsSignDocRequest> getDocuments() {
@@ -19,12 +20,12 @@ public class CalculateHashRequest {
 		this.documents = documents;
 	}
 
-	public String getSigningCertificate() {
-		return signingCertificate;
+	public String getEndEntityCertificate() {
+		return endEntityCertificate;
 	}
 
-	public void setSigningCertificate(String signingCertificate) {
-		this.signingCertificate = signingCertificate;
+	public void setEndEntityCertificate(String endEntityCertificate) {
+		this.endEntityCertificate = endEntityCertificate;
 	}
 
 	public List<String> getCertificateChain() {

@@ -7,7 +7,7 @@ import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocResponse;
 import eu.europa.ec.eudi.signer.r3.sca.model.CredentialsService;
 import eu.europa.ec.eudi.signer.r3.sca.model.SignatureService;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequestDTO;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequest;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 
 import java.security.cert.X509Certificate;
@@ -95,9 +95,10 @@ public class SignaturesController {
     @GetMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
     public CalculateHashResponse calculateHash(@RequestBody CalculateHashRequest requestDTO) throws Exception{
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
-        X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(requestDTO.getSigningCertificate());
+        X509Certificate certificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
         logger.info("Loaded signing certificate.");
         List<X509Certificate> certificateChain = new ArrayList<>();
+        System.out.println("Certificate Chain nb: "+requestDTO.getCertificateChain().size());
         for(String c: requestDTO.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
@@ -109,17 +110,17 @@ public class SignaturesController {
 
         CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource(certificateChain);
         logger.info("Loaded certificate source.");
-        List<String> hashes = this.signatureService.calculateHashValue(documents, signingCertificate, certificateChain, hashAlgorithmOID, date, certificateSource);
+        List<String> hashes = this.signatureService.calculateHashValue(documents, certificate, certificateChain, hashAlgorithmOID, date, certificateSource);
         logger.info("Created list of hashes.");
 		return new CalculateHashResponse(hashes, date.getTime());
     }
 
     @GetMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
-    public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequestDTO requestDTO) throws Exception{
+    public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequest requestDTO) throws Exception{
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
         String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
         boolean returnValidationInfo = requestDTO.isReturnValidationInfo();
-        X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(requestDTO.getSigningCertificate());
+        X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
         List<X509Certificate> certificateChain = new ArrayList<>();
         for(String c: requestDTO.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));

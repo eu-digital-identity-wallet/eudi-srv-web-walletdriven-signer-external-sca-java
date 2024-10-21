@@ -4,11 +4,11 @@ import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
 
 import java.util.List;
 
-public class SignedDocumentRequestDTO {
+public class SignedDocumentRequest {
 	private List<DocumentsSignDocRequest> documents;
 	private String hashAlgorithmOID;
 	private boolean returnValidationInfo;
-	private String signingCertificate;
+	private String endEntityCertificate;
 	private List<String> certificateChain;
 	private long date;
 	List<String> signatures;
@@ -37,12 +37,12 @@ public class SignedDocumentRequestDTO {
 		this.returnValidationInfo = returnValidationInfo;
 	}
 
-	public String getSigningCertificate() {
-		return signingCertificate;
+	public String getEndEntityCertificate() {
+		return endEntityCertificate;
 	}
 
-	public void setSigningCertificate(String signingCertificate) {
-		this.signingCertificate = signingCertificate;
+	public void setEndEntityCertificate(String endEntityCertificate) {
+		this.endEntityCertificate = endEntityCertificate;
 	}
 
 	public List<String> getCertificateChain() {

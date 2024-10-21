@@ -11,6 +11,7 @@ public class OAuthClientConfig {
     private String redirectUri;
     private String scope;
     private String defaultAuthorizationServerUrl;
+    private String appRedirectUri;
 
     public String getClientId() {
         return clientId;
@@ -58,5 +59,13 @@ public class OAuthClientConfig {
 
     public void setDefaultAuthorizationServerUrl(String defaultAuthorizationServerUrl) {
         this.defaultAuthorizationServerUrl = defaultAuthorizationServerUrl;
+    }
+
+    public String getAppRedirectUri() {
+        return appRedirectUri;
+    }
+
+    public void setAppRedirectUri(String appRedirectUri) {
+        this.appRedirectUri = appRedirectUri;
     }
 }
