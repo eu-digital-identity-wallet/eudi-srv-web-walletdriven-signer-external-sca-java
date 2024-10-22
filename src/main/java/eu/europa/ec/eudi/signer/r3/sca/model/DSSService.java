@@ -1,5 +1,6 @@
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
+import eu.europa.ec.eudi.signer.r3.sca.web.controller.SignaturesController;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
 import eu.europa.esig.dss.alert.LogOnStatusAlert;
@@ -53,26 +54,26 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 
 @Service
 public class DSSService {
-    private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
+    private final static Logger logger = LogManager.getLogger(SignaturesController.class);
 
     public static SignatureLevel checkConformance_level(String conformance_level, String string) {
         String enumValue = mapToEnumValue(conformance_level, string);
         if (enumValue == null) {
             return null;
         }
-
         try {
             return SignatureLevel.valueByName(enumValue);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            logger.error("Session_id:{}. Error message: {}.", RequestContextHolder.currentRequestAttributes().getSessionId(), e.getMessage());
         }
 
         return null;
@@ -94,102 +95,82 @@ public class DSSService {
                 prefix = "XAdES_BASELINE_";
                 break;
             default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Conformance Level invalid.");
+				logger.error("Session_id:{},Conformance Level invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
                 return null;
         }
 
-        switch (conformance_level) {
-            case "Ades-B-B":
-                return prefix + "B";
-            case "Ades-B-LT":
-                return prefix + "LT";
-            case "Ades-B-LTA":
-                return prefix + "LTA";
-            case "Ades-B-T":
-                return prefix + "T";
-            default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Conformance Level invalid.");
-                return null;
-        }
+		return switch (conformance_level) {
+			case "Ades-B-B" -> prefix + "B";
+			case "Ades-B-LT" -> prefix + "LT";
+			case "Ades-B-LTA" -> prefix + "LTA";
+			case "Ades-B-T" -> prefix + "T";
+			default -> {
+				logger.error("Session_id:" + RequestContextHolder.currentRequestAttributes().getSessionId() + "," + "Conformance Level invalid.");
+				yield null;
+			}
+		};
     }
 
     public static SignatureForm checkSignForm(String signForm) {
-        switch (signForm) {
-            case "P":
-                return SignatureForm.PAdES;
-            case "C":
-                return SignatureForm.CAdES;
-            case "J":
-                return SignatureForm.JAdES;
-            case "X":
-                return SignatureForm.XAdES;
-            default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Format invalid.");
-                return null;
-        }
+		return switch (signForm) {
+			case "P" -> SignatureForm.PAdES;
+			case "C" -> SignatureForm.CAdES;
+			case "J" -> SignatureForm.JAdES;
+			case "X" -> SignatureForm.XAdES;
+			default -> {
+				logger.error("Session_id:{},Signature Format invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
+				yield null;
+			}
+		};
     }
 
     private static SignatureAlgorithm checkSignAlg(String alg) {
-        switch (alg) {
-            case "1.2.840.113549.1.1.11":
-                return SignatureAlgorithm.RSA_SHA256;
-            case "1.2.840.113549.1.1.12":
-                return SignatureAlgorithm.RSA_SHA384;
-            case "1.2.840.113549.1.1.13":
-                return SignatureAlgorithm.RSA_SHA512;
-            default:
-                return null;
-        }
+		return switch (alg) {
+			case "1.2.840.113549.1.1.11" -> SignatureAlgorithm.RSA_SHA256;
+			case "1.2.840.113549.1.1.12" -> SignatureAlgorithm.RSA_SHA384;
+			case "1.2.840.113549.1.1.13" -> SignatureAlgorithm.RSA_SHA512;
+			default -> null;
+		};
     }
 
     public static DigestAlgorithm checkSignAlgDigest(String alg) {
-        switch (alg) {
-            case "1.2.840.113549.1.1.11":
-                return DigestAlgorithm.SHA256;
-            case "2.16.840.1.101.3.4.2.1":
-                return DigestAlgorithm.SHA256;
-            case "1.2.840.113549.1.1.12":
-                return DigestAlgorithm.SHA384;
-            case "2.16.840.1.101.3.4.2.2":
-                return DigestAlgorithm.SHA384;
-            case "1.2.840.113549.1.1.13":
-                return DigestAlgorithm.SHA512;
-            case "2.16.840.1.101.3.4.2.3":
-                return DigestAlgorithm.SHA512;
-            default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Digest Algorithm invalid.");
-                return null;
-        }
+		return switch (alg) {
+			case "1.2.840.113549.1.1.11" -> DigestAlgorithm.SHA256;
+			case "2.16.840.1.101.3.4.2.1" -> DigestAlgorithm.SHA256;
+			case "1.2.840.113549.1.1.12" -> DigestAlgorithm.SHA384;
+			case "2.16.840.1.101.3.4.2.2" -> DigestAlgorithm.SHA384;
+			case "1.2.840.113549.1.1.13" -> DigestAlgorithm.SHA512;
+			case "2.16.840.1.101.3.4.2.3" -> DigestAlgorithm.SHA512;
+			default -> {
+				logger.error("Session_id:{},Signature Digest Algorithm invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
+				yield null;
+			}
+		};
     }
 
     public static ASiCContainerType checkASiCContainerType(String alg) {
-        switch (alg) {
-            case "No":
-                return null;
-            case "ASiC-E":
-                return ASiCContainerType.ASiC_E;
-            case "ASiC-S":
-                return ASiCContainerType.ASiC_S;
-            default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"ASICC Container Type invalid.");
-                return null;
-        }
+		return switch (alg) {
+			case "No" -> null;
+			case "ASiC-E" -> ASiCContainerType.ASiC_E;
+			case "ASiC-S" -> ASiCContainerType.ASiC_S;
+			default -> {
+				logger.error("Session_id:{},ASICC Container Type invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
+				yield null;
+			}
+		};
     }
 
     public static SignaturePackaging checkEnvProps(String env) {
-        switch (env) {
-            case "ENVELOPED":
-                return SignaturePackaging.ENVELOPED;
-            case "ENVELOPING":
-                return SignaturePackaging.ENVELOPING;
-            case "DETACHED":
-                return SignaturePackaging.DETACHED;
-            case "INTERNALLY_DETACHED":
-                return SignaturePackaging.INTERNALLY_DETACHED;
-            default:
-                fileLogger.error("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"Signature Packaging invalid.");
-                return null;
-        }
+		return switch (env) {
+			case "ENVELOPED" -> SignaturePackaging.ENVELOPED;
+			case "ENVELOPING" -> SignaturePackaging.ENVELOPING;
+			case "DETACHED" -> SignaturePackaging.DETACHED;
+			case "INTERNALLY_DETACHED" -> SignaturePackaging.INTERNALLY_DETACHED;
+			default -> {
+				logger.error("Session_id:{},Signature Packaging invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
+				yield null;
+			}
+		};
     }
 
     public DSSDocument loadDssDocument(String document) {
@@ -198,15 +179,15 @@ public class DSSService {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public byte[] DataToBeSignedData(SignatureDocumentForm form) throws CertificateException {
+    public byte[] DataToBeSignedData(SignatureDocumentForm form) {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
               form.getTrustedCertificates());
 
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Service created.");
+		logger.info("Session_id:{},DataToBeSignedData Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
         AbstractSignatureParameters parameters = fillParameters(form);
 
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +","+"DataToBeSignedData Parameters Filled.");
+		logger.info("Session_id:{},DataToBeSignedData Parameters Filled.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         ToBeSigned toBeSigned = service.getDataToSign(toSignDocument, parameters);
@@ -219,10 +200,10 @@ public class DSSService {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
 
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +", signDocument Service created.");
+		logger.info("Session_id:{}, signDocument Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         AbstractSignatureParameters parameters = fillParameters(form);
-        fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +", DataToBeSignedData Parameters Filled.");
+		logger.info("Session_id:{}, DataToBeSignedData Parameters Filled.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         System.out.println("######: "+parameters.getCertificateChain().size());
 
@@ -269,9 +250,7 @@ public class DSSService {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private void fillTimestampParameters(AbstractSignatureParameters parameters, SignatureDocumentForm form) {
         SignatureForm signatureForm = form.getSignatureForm();
-
-        ASiCContainerType containerType = null;
-        containerType = form.getContainerType();
+        ASiCContainerType containerType = form.getContainerType();
 
         TimestampParameters timestampParameters = getTimestampParameters(containerType, signatureForm);
         timestampParameters.setDigestAlgorithm(form.getDigestAlgorithm());
@@ -322,26 +301,18 @@ public class DSSService {
 
         cv.setRevocationFallback(true);
 
-        DocumentSignatureService service = null;
+        DocumentSignatureService service;
         if (containerType != null) {
             service = (DocumentSignatureService) getASiCSignatureService(signatureForm, cv);
         } else {
-            switch (signatureForm) {
-                case CAdES:
-                    service = new CAdESService(cv);
-                    break;
-                case PAdES:
-                    service = new PAdESService(cv);
-                    break;
-                case XAdES:
-                    service = new XAdESService(cv);
-                    break;
-                case JAdES:
-                    service = new JAdESService(cv);
-                    break;
-                default:
-                    throw new IllegalArgumentException(String.format("Unknown signature form : %s", signatureForm));
-            }
+			service = switch (signatureForm) {
+				case CAdES -> new CAdESService(cv);
+				case PAdES -> new PAdESService(cv);
+				case XAdES -> new XAdESService(cv);
+				case JAdES -> new JAdESService(cv);
+				default ->
+					  throw new IllegalArgumentException(String.format("Unknown signature form : %s", signatureForm));
+			};
         }
 
         String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
@@ -353,41 +324,25 @@ public class DSSService {
 
     @SuppressWarnings("rawtypes")
     private MultipleDocumentsSignatureService getASiCSignatureService(SignatureForm signatureForm, CertificateVerifier cv) {
-        MultipleDocumentsSignatureService service = null;
-        switch (signatureForm) {
-            case CAdES:
-                service = new ASiCWithCAdESService(cv);
-                break;
-            case XAdES:
-                service = new ASiCWithXAdESService(cv);
-                break;
-            default:
-                throw new IllegalArgumentException(
-                      String.format("Not supported signature form for an ASiC container : %s", signatureForm));
-        }
-        return service;
+		return switch (signatureForm) {
+			case CAdES -> new ASiCWithCAdESService(cv);
+			case XAdES -> new ASiCWithXAdESService(cv);
+			default -> throw new IllegalArgumentException(
+				  String.format("Not supported signature form for an ASiC container : %s", signatureForm));
+		};
     }
 
     private TimestampParameters getTimestampParameters(ASiCContainerType containerType, SignatureForm signatureForm) {
-        TimestampParameters parameters = null;
+        TimestampParameters parameters;
         if (containerType == null) {
-            switch (signatureForm) {
-                case CAdES:
-                    parameters = new CAdESTimestampParameters();
-                    break;
-                case XAdES:
-                    parameters = new XAdESTimestampParameters();
-                    break;
-                case PAdES:
-                    parameters = new PAdESTimestampParameters();
-                    break;
-                case JAdES:
-                    parameters = new JAdESTimestampParameters();
-                    break;
-                default:
-                    throw new IllegalArgumentException(
-                          String.format("Not supported signature form for a time-stamp : %s", signatureForm));
-            }
+			parameters = switch (signatureForm) {
+				case CAdES -> new CAdESTimestampParameters();
+				case XAdES -> new XAdESTimestampParameters();
+				case PAdES -> new PAdESTimestampParameters();
+				case JAdES -> new JAdESTimestampParameters();
+				default -> throw new IllegalArgumentException(
+					  String.format("Not supported signature form for a time-stamp : %s", signatureForm));
+			};
 
         } else {
             switch (signatureForm) {
@@ -409,7 +364,7 @@ public class DSSService {
 
     @SuppressWarnings({ "rawtypes" })
     private AbstractSignatureParameters getSignatureParameters(ASiCContainerType containerType, SignatureForm signatureForm) {
-        AbstractSignatureParameters parameters = null;
+        AbstractSignatureParameters parameters;
         if (containerType != null) {
             parameters = getASiCSignatureParameters(containerType, signatureForm);
         } else {
@@ -443,7 +398,7 @@ public class DSSService {
 
     @SuppressWarnings({ "rawtypes" })
     private AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType containerType, SignatureForm signatureForm) {
-        AbstractSignatureParameters parameters = null;
+        AbstractSignatureParameters parameters;
         switch (signatureForm) {
             case CAdES:
                 ASiCWithCAdESSignatureParameters asicCadesParams = new ASiCWithCAdESSignatureParameters();

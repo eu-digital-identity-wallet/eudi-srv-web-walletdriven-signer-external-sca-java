@@ -108,7 +108,7 @@ public class SignaturesController {
         Date date = new Date();
         System.out.println(date.getTime());
 
-        CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource(certificateChain);
+        CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
         logger.info("Loaded certificate source.");
         List<String> hashes = this.signatureService.calculateHashValue(documents, certificate, certificateChain, hashAlgorithmOID, date, certificateSource);
         logger.info("Created list of hashes.");
@@ -126,7 +126,7 @@ public class SignaturesController {
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
         Date date = new Date(requestDTO.getDate());
-        CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource(certificateChain);
+        CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
         List<String> signatures = requestDTO.getSignatures();
         return this.signatureService.buildSignedDocument(documents, hashAlgorithmOID, returnValidationInfo, signingCertificate,
               certificateChain, date, certificateSource, signatures);
