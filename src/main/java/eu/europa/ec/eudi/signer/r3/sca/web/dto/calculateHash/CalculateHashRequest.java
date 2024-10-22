@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CalculateHashRequest {
-
 	private List<DocumentsSignDocRequest> documents;
 	private String endEntityCertificate;
 	private List<String> certificateChain = new ArrayList<>();

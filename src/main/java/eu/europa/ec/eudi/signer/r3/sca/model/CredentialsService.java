@@ -41,9 +41,9 @@ public class CredentialsService {
 
     public static class CertificateResponse {
         private X509Certificate certificate;
-        private List<X509Certificate> certificateChain;
+        private final List<X509Certificate> certificateChain;
         private CommonTrustedCertificateSource tsaCommonSource;
-        private List<String> signAlgo;
+        private final List<String> signAlgo;
 
         public CertificateResponse(X509Certificate certificate, List<X509Certificate> certificateChain,
                                    List<String> signAlgo) {
@@ -64,10 +64,6 @@ public class CredentialsService {
             return certificateChain;
         }
 
-        public void setCertificateChain(List<X509Certificate> certificateChain) {
-            this.certificateChain = certificateChain;
-        }
-
         public CommonTrustedCertificateSource getTsaCommonSource() {
             return tsaCommonSource;
         }
@@ -80,15 +76,12 @@ public class CredentialsService {
             return signAlgo;
         }
 
-        public void setSignAlgo(List<String> signAlgo) {
-            this.signAlgo = signAlgo;
-        }
     }
 
     public CertificateResponse getCertificateAndChainAndCommonSource(String qtspUrl, String credentialId, String authorizationBearerHeader){
         CertificateResponse response = getCertificateAndCertificateChain(qtspUrl, credentialId, authorizationBearerHeader);
         logger.info("Retrieved the signing certificate and the certificate chain.");
-        CommonTrustedCertificateSource commonTrustedCertificateSource = getCommonTrustedCertificateSource(response.getCertificateChain());
+        CommonTrustedCertificateSource commonTrustedCertificateSource = getCommonTrustedCertificateSource();
         response.setTsaCommonSource(commonTrustedCertificateSource);
         logger.info("Retrieved the certificate source.");
         return response;
@@ -113,7 +106,8 @@ public class CredentialsService {
                 x509Certificates.add(cert);
             }
             catch (Exception e){
-                e.printStackTrace();
+                logger.error(e.getMessage());
+                logger.error(e.getLocalizedMessage());
             }
         }
         int i = x509Certificates.size() - 1;
@@ -129,12 +123,9 @@ public class CredentialsService {
         return (X509Certificate)certFactory.generateCertificate(inputStream);
     }
 
-    public CommonTrustedCertificateSource getCommonTrustedCertificateSource (List<X509Certificate> certificateChain){
+    public CommonTrustedCertificateSource getCommonTrustedCertificateSource (){
         CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
         certificateSource.addCertificate(this.TSACertificateToken);
-        for(X509Certificate cert: certificateChain){
-            certificateSource.addCertificate(new CertificateToken(cert));
-        }
         return certificateSource;
     }
 }
