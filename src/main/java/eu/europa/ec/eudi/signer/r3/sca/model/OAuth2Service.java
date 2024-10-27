@@ -4,16 +4,14 @@ import eu.europa.ec.eudi.signer.r3.sca.config.OAuthClientConfig;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2.CredentialAuthorizationResponse;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2.CredentialAuthorizationRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2.OAuth2AuthorizeRequest;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class OAuth2Service {
@@ -27,14 +25,9 @@ public class OAuth2Service {
 	}
 
 	private String generateNonce(String root) throws Exception{
-		SecureRandom prng = new SecureRandom();
-		String randomNum = String.valueOf(prng.nextInt());
-		System.out.println("Code_Verifier: "+ root);
 		MessageDigest sha = MessageDigest.getInstance("SHA-256");
 		byte[] result = sha.digest(root.getBytes());
-		String code_challenge = Base64.getUrlEncoder().encodeToString(result);
-		System.out.println("Code_Challenge: "+code_challenge);
-		return code_challenge;
+		return Base64.getUrlEncoder().withoutPadding().encodeToString(result);
 	}
 
 	private static String getBasicAuthenticationHeader(String username, String password) {
@@ -60,33 +53,6 @@ public class OAuth2Service {
 		authorizeRequest.setNumSignatures(credentialAuthorization.getNumSignatures());
 		authorizeRequest.setHashes(hash);
 		authorizeRequest.setHashAlgorithmOID(credentialAuthorization.getHashAlgorithmOID());
-
-        /*
-        JSONArray documentDigests = new JSONArray();
-        for(String h: hashes){
-            JSONObject documentDigest = new JSONObject();
-            documentDigest.put("hash", h);
-            documentDigest.put("label", "This is some document hash");
-            documentDigests.put(documentDigest);
-        }
-
-        JSONObject authorization_details = new JSONObject();
-        authorization_details.put("type", "credential");
-        authorization_details.put("credentialID", URLEncoder.encode(credentialAuthorization.getCredentialID(), StandardCharsets.UTF_8));
-        authorization_details.put("documentDigests", documentDigests);
-        authorization_details.put("hashAlgorithmOID", credentialAuthorization.getHashAlgorithmOID());
-        System.out.println(authorization_details);
-
-        OAuth2AuthorizeRequest authorizeRequest = new OAuth2AuthorizeRequest();
-        authorizeRequest.setResponse_type("code");
-        authorizeRequest.setClient_id("sca-client");
-        authorizeRequest.setRedirect_uri("http://localhost:8086/credential/oauth/login/code");
-        authorizeRequest.setCode_challenge(code_challenge);
-        authorizeRequest.setCode_challenge_method("S256");
-        authorizeRequest.setLang("pt-PT");
-        authorizeRequest.setState("12345678");
-        authorizeRequest.setAuthorization_details(URLEncoder.encode(authorization_details.toString(), StandardCharsets.UTF_8));
-        System.out.println(authorizeRequest);*/
 
 		CredentialAuthorizationResponse responseTemporary = this.qtspClient.requestOAuth2Authorize(credentialAuthorization.getAuthorizationServerUrl(), authorizeRequest, authorizationBearerHeader);
 		responseTemporary.setSignature_date(date.getTime());
