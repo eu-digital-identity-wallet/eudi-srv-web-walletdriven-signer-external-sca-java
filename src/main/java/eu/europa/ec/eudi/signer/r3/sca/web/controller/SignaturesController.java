@@ -92,7 +92,7 @@ public class SignaturesController {
         }
     }
 
-    @GetMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
+    @PostMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
     public CalculateHashResponse calculateHash(@RequestBody CalculateHashRequest requestDTO) throws Exception{
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
         X509Certificate certificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
@@ -115,7 +115,7 @@ public class SignaturesController {
 		return new CalculateHashResponse(hashes, date.getTime());
     }
 
-    @GetMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
+    @PostMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
     public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequest requestDTO) throws Exception{
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
         String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
