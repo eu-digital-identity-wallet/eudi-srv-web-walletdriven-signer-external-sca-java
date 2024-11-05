@@ -123,28 +123,22 @@ public class DSSService {
 		};
     }
 
-    private static SignatureAlgorithm checkSignAlg(String alg) {
-		return switch (alg) {
-			case "1.2.840.113549.1.1.11" -> SignatureAlgorithm.RSA_SHA256;
-			case "1.2.840.113549.1.1.12" -> SignatureAlgorithm.RSA_SHA384;
-			case "1.2.840.113549.1.1.13" -> SignatureAlgorithm.RSA_SHA512;
-			default -> null;
-		};
-    }
+    public static DigestAlgorithm checkDigestAlgorithm(String alg) throws Exception{
+		try {
+			return DigestAlgorithm.forOID(alg);
+		}
+		catch (IllegalArgumentException e){
+			logger.info("Session_id:{}, hashAlgorithmOID given doesn't match a DigestAlgorithm. Try to load SignatureAlgorithm.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
-    public static DigestAlgorithm checkSignAlgDigest(String alg) {
-		return switch (alg) {
-			case "1.2.840.113549.1.1.11" -> DigestAlgorithm.SHA256;
-			case "2.16.840.1.101.3.4.2.1" -> DigestAlgorithm.SHA256;
-			case "1.2.840.113549.1.1.12" -> DigestAlgorithm.SHA384;
-			case "2.16.840.1.101.3.4.2.2" -> DigestAlgorithm.SHA384;
-			case "1.2.840.113549.1.1.13" -> DigestAlgorithm.SHA512;
-			case "2.16.840.1.101.3.4.2.3" -> DigestAlgorithm.SHA512;
-			default -> {
-				logger.error("Session_id:{},Signature Digest Algorithm invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
-				yield null;
+			try {
+				SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.forOID(alg);
+				return signatureAlgorithm.getDigestAlgorithm();
 			}
-		};
+			catch (IllegalArgumentException e1){
+				logger.error("Session_id:{},Signature Digest Algorithm invalid.", RequestContextHolder.currentRequestAttributes().getSessionId());
+				throw new Exception("A DigestAlgorithm was not found from the hashAlgorithmOID.");
+			}
+		}
     }
 
     public static ASiCContainerType checkASiCContainerType(String alg) {
