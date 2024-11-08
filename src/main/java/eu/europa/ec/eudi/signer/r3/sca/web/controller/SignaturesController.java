@@ -94,40 +94,94 @@ public class SignaturesController {
 
     @PostMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
     public CalculateHashResponse calculateHash(@RequestBody CalculateHashRequest requestDTO) throws Exception{
+
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
+        if(requestDTO.getDocuments() == null){
+            logger.error("The documents to be signed should be sent in the Http Request Body.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                  "invalid_response: the documents to be signed should be sent in the request.");
+        }
+
+
+        if(requestDTO.getEndEntityCertificate() == null){
+            logger.error("The certificate is missing from the request.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
+        }
         X509Certificate certificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
         logger.info("Loaded signing certificate.");
+
+
         List<X509Certificate> certificateChain = new ArrayList<>();
-        System.out.println("Certificate Chain nb: "+requestDTO.getCertificateChain().size());
         for(String c: requestDTO.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
         logger.info("Loaded certificate chain.");
 
         String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
+        if(hashAlgorithmOID == null){
+            logger.error("The digest/hash algorithm oid parameter is missing.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the hash algorithm oid is missing.");
+        }
+
         Date date = new Date();
-        System.out.println(date.getTime());
 
         CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
         logger.info("Loaded certificate source.");
+
         List<String> hashes = this.signatureService.calculateHashValue(documents, certificate, certificateChain, hashAlgorithmOID, date, certificateSource);
         logger.info("Created list of hashes.");
+
 		return new CalculateHashResponse(hashes, date.getTime());
     }
 
     @PostMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
     public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequest requestDTO) throws Exception{
         List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
+        if(documents == null || documents.isEmpty()){
+            logger.error("The documents to be signed should be sent in the Http Request Body.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                  "invalid_response: the documents to be signed should be sent in the request.");
+        }
+
         String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
+        if(hashAlgorithmOID == null){
+            logger.error("The digest/hash algorithm oid parameter is missing.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the hash algorithm oid is missing.");
+        }
+
         boolean returnValidationInfo = requestDTO.isReturnValidationInfo();
+
+        if(requestDTO.getEndEntityCertificate() == null){
+            logger.error("The certificate is missing from the request.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
+        }
         X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
+
         List<X509Certificate> certificateChain = new ArrayList<>();
         for(String c: requestDTO.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
+        logger.info("Loaded certificate chain.");
+
+        if(requestDTO.getDate() == -1){
+            logger.error("The date parameter is missing.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the date parameter is missing.");
+        }
         Date date = new Date(requestDTO.getDate());
+
         CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
+        logger.info("Loaded the certificate source");
+
         List<String> signatures = requestDTO.getSignatures();
+        if(signatures == null || signatures.isEmpty()){
+            logger.error("The signature parameter is missing.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the signature parameter is missing.");
+        }
+        if(signatures.size() != documents.size()){
+            logger.error("The number of signatures received doesn't match the number of documents to signed received.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: " +
+                  "the number of signatures received doesn't match the number of documents to signed received.");
+        }
         return this.signatureService.buildSignedDocument(documents, hashAlgorithmOID, returnValidationInfo, signingCertificate,
               certificateChain, date, certificateSource, signatures);
     }

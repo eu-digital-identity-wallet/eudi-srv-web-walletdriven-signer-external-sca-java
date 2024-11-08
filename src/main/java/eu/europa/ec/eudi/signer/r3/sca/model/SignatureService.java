@@ -43,12 +43,13 @@ public class SignatureService {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
             SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
-            DigestAlgorithm aux_digest_alg = DSSService.checkSignAlgDigest(hashAlgorithmOID);
+            DigestAlgorithm aux_digest_alg = DSSService.checkDigestAlgorithm(hashAlgorithmOID);
+            EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(signingCertificate.getPublicKey().getAlgorithm());
             SignaturePackaging aux_sign_pack = DSSService.checkEnvProps(document.getSigned_envelope_property());
             ASiCContainerType aux_asic_ContainerType = DSSService.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm = DSSService.checkSignForm(document.getSignature_format());
 
-            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Payload Received:{ Document Hash:"+  dssDocument.getDigest(aux_digest_alg) +", conformance_level:" +document.getConformance_level()+ ","+
+            fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",Payload Received:{ Document Hash:"+  aux_digest_alg +", conformance_level:" +document.getConformance_level()+ ","+
                   "Signature Format:"+ document.getSignature_format() + ", Hash Algorithm OID:"+ hashAlgorithmOID + ", Signature Packaging:"+ document.getSigned_envelope_property() + ", Type of Container:"+ document.getContainer() + "}");
 
             SignatureDocumentForm signatureDocumentForm = new SignatureDocumentForm();
@@ -63,7 +64,7 @@ public class SignatureService {
             signatureDocumentForm.setTrustedCertificates(certificateSource);
             signatureDocumentForm.setSignatureForm(signatureForm);
             signatureDocumentForm.setCertChain(certificateChain);
-            signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
+            signatureDocumentForm.setEncryptionAlgorithm(encryptionAlgorithm);
 
             byte[] dataToBeSigned = dssClient.DataToBeSignedData(signatureDocumentForm);
             fileLogger.info("Session_id:"+ RequestContextHolder.currentRequestAttributes().getSessionId() +",DataToBeSigned successfully created");
@@ -98,7 +99,8 @@ public class SignatureService {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
             SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
-            DigestAlgorithm aux_digest_alg = DSSService.checkSignAlgDigest(signDocRequest.getHashAlgorithmOID());
+            DigestAlgorithm aux_digest_alg = DSSService.checkDigestAlgorithm(signDocRequest.getHashAlgorithmOID());
+            EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
             SignaturePackaging aux_sign_pack = DSSService.checkEnvProps(document.getSigned_envelope_property());
             ASiCContainerType aux_asic_ContainerType = DSSService.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm= DSSService.checkSignForm(document.getSignature_format());
@@ -115,7 +117,7 @@ public class SignatureService {
             signatureDocumentForm.setTrustedCertificates(certificateSource);
             signatureDocumentForm.setSignatureForm(signatureForm);
             signatureDocumentForm.setCertChain(certificateChain);
-            signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
+            signatureDocumentForm.setEncryptionAlgorithm(encryptionAlgorithm);
             signatureDocumentForm.setSignatureValue(Base64.getDecoder().decode(signatureValue));
 
             DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
@@ -189,7 +191,8 @@ public class SignatureService {
             DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
             SignatureLevel aux_sign_level = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
-            DigestAlgorithm aux_digest_alg = DSSService.checkSignAlgDigest(hashAlgorithmOID);
+            DigestAlgorithm aux_digest_alg = DSSService.checkDigestAlgorithm(hashAlgorithmOID);
+            EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
             SignaturePackaging aux_sign_pack = DSSService.checkEnvProps(document.getSigned_envelope_property());
             ASiCContainerType aux_asic_ContainerType = DSSService.checkASiCContainerType(document.getContainer());
             SignatureForm signatureForm= DSSService.checkSignForm(document.getSignature_format());
@@ -206,7 +209,7 @@ public class SignatureService {
             signatureDocumentForm.setTrustedCertificates(certificateSource);
             signatureDocumentForm.setSignatureForm(signatureForm);
             signatureDocumentForm.setCertChain(certificateChain);
-            signatureDocumentForm.setEncryptionAlgorithm(EncryptionAlgorithm.RSA);
+            signatureDocumentForm.setEncryptionAlgorithm(encryptionAlgorithm);
             signatureDocumentForm.setSignatureValue(Base64.getDecoder().decode(signatureValue));
 
             DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
@@ -216,40 +219,23 @@ public class SignatureService {
                 if (document.getContainer().equals("ASiC-E")) {
                     if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-e+zip"));
-                        docSigned.save("tests/exampleSigned.cse");
-                        File file = new File("tests/exampleSigned.cse");
-                        byte[] pdfBytes = Files.readAllBytes(file.toPath());
-                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
                     }
                 }
                 else if (document.getContainer().equals("ASiC-S")) {
                     if (document.getSignature_format().equals("C") || document.getSignature_format().equals("X")) {
                         docSigned.setMimeType(MimeType.fromMimeTypeString("application/vnd.etsi.asic-s+zip"));
-                        docSigned.save("tests/exampleSigned.scs");
-                        File file = new File("tests/exampleSigned.scs");
-                        byte[] pdfBytes = Files.readAllBytes(file.toPath());
-                        DocumentWithSignature.add(Base64.getEncoder().encodeToString(pdfBytes));
                     }
                 }
                 else if (document.getSignature_format().equals("J")) {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/jose"));
-                    docSigned.save("tests/exampleSigned.json");
-                    File file = new File("tests/exampleSigned.json");
-                    byte[] jsonBytes = Files.readAllBytes(file.toPath());
-                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(jsonBytes));
                 }
                 else if (document.getSignature_format().equals("X")) {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("text/xml"));
-                    docSigned.save("tests/exampleSigned.xml");
-                    File file = new File("tests/exampleSigned.xml");
-                    byte[] xmlBytes = Files.readAllBytes(file.toPath());
-                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(xmlBytes));
                 }
                 else {
                     docSigned.setMimeType(MimeType.fromMimeTypeString("application/pdf"));
-                    docSigned.save("tests/exampleSigned.pdf");
-                    DocumentWithSignature.add(Base64.getEncoder().encodeToString(docSigned.openStream().readAllBytes()));
                 }
+                DocumentWithSignature.add(Base64.getEncoder().encodeToString(docSigned.openStream().readAllBytes()));
             } catch (Exception e) {
                 fileLogger.error("invalid request: "+ e.getMessage());
                 throw e;
