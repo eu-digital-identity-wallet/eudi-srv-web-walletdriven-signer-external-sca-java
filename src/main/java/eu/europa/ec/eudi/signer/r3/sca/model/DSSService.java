@@ -1,6 +1,5 @@
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.controller.SignaturesController;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
 import eu.europa.esig.dss.alert.LogOnStatusAlert;
@@ -20,14 +19,11 @@ import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureForm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.enumerations.SignaturePackaging;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.TimestampParameters;
-import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.PAdESTimestampParameters;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
@@ -49,6 +45,7 @@ import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
 import eu.europa.esig.dss.validation.RevocationDataVerifier;
+
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -62,7 +59,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 
 @Service
 public class DSSService {
-    private final static Logger logger = LogManager.getLogger(SignaturesController.class);
+    private final static Logger logger = LogManager.getLogger(DSSService.class);
 
     public static SignatureLevel checkConformance_level(String conformance_level, String string) {
         String enumValue = mapToEnumValue(conformance_level, string);
@@ -184,8 +181,7 @@ public class DSSService {
 
         DSSDocument toSignDocument = form.getDocumentToSign();
         ToBeSigned toBeSigned = service.getDataToSign(toSignDocument, parameters);
-        return toBeSigned.getBytes();
-
+		return DSSUtils.digest(parameters.getDigestAlgorithm(), toBeSigned.getBytes());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -206,7 +202,7 @@ public class DSSService {
         signatureValue.setAlgorithm(SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(), form.getDigestAlgorithm()));
         signatureValue.setValue(form.getSignatureValue());
 
-        return service.signDocument(toSignDocument, parameters, signatureValue);
+		return service.signDocument(toSignDocument, parameters, signatureValue);
     }
 
     @SuppressWarnings({ "rawtypes" })

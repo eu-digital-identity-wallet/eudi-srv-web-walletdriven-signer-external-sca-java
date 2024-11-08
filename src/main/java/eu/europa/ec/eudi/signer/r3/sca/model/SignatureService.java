@@ -175,7 +175,6 @@ public class SignatureService {
         return new SignaturesSignDocResponse(DocumentWithSignature, allSignaturesObjects, null, validationInfo);
     }
 
-
     public SignaturesSignDocResponse buildSignedDocument(
           List<DocumentsSignDocRequest> documents, String hashAlgorithmOID, boolean returnValidationInfo,
           X509Certificate certificate, List<X509Certificate> certificateChain, Date date,
