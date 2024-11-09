@@ -81,7 +81,7 @@ public class CredentialsService {
     public CertificateResponse getCertificateAndChainAndCommonSource(String qtspUrl, String credentialId, String authorizationBearerHeader){
         CertificateResponse response = getCertificateAndCertificateChain(qtspUrl, credentialId, authorizationBearerHeader);
         logger.info("Retrieved the signing certificate and the certificate chain.");
-        CommonTrustedCertificateSource commonTrustedCertificateSource = getCommonTrustedCertificateSource();
+        CommonTrustedCertificateSource commonTrustedCertificateSource = getCommonTrustedCertificateSource(response.getCertificateChain());
         response.setTsaCommonSource(commonTrustedCertificateSource);
         logger.info("Retrieved the certificate source.");
         return response;
@@ -123,9 +123,12 @@ public class CredentialsService {
         return (X509Certificate)certFactory.generateCertificate(inputStream);
     }
 
-    public CommonTrustedCertificateSource getCommonTrustedCertificateSource (){
+    public CommonTrustedCertificateSource getCommonTrustedCertificateSource (List<X509Certificate> certificateChain){
         CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
         certificateSource.addCertificate(this.TSACertificateToken);
+        for(X509Certificate cert: certificateChain){
+            certificateSource.addCertificate(new CertificateToken(cert));
+        }
         return certificateSource;
     }
 }

@@ -169,14 +169,15 @@ public class DSSService {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public byte[] DataToBeSignedData(SignatureDocumentForm form) {
+    /**
+     * Function that returns the digest of the data to be signed from the document and parameters received
+     */
+    public byte[] getDigestOfDataToBeSigned(SignatureDocumentForm form) {
 
-        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(),
-              form.getTrustedCertificates());
-
+        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
 		logger.info("Session_id:{},DataToBeSignedData Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
-        AbstractSignatureParameters parameters = fillParameters(form);
 
+        AbstractSignatureParameters parameters = fillParameters(form);
 		logger.info("Session_id:{},DataToBeSignedData Parameters Filled.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         DSSDocument toSignDocument = form.getDocumentToSign();
@@ -188,13 +189,10 @@ public class DSSService {
     public DSSDocument signDocument(SignatureDocumentForm form) {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
-
 		logger.info("Session_id:{}, signDocument Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         AbstractSignatureParameters parameters = fillParameters(form);
 		logger.info("Session_id:{}, DataToBeSignedData Parameters Filled.", RequestContextHolder.currentRequestAttributes().getSessionId());
-
-        System.out.println("######: "+parameters.getCertificateChain().size());
 
         DSSDocument toSignDocument = form.getDocumentToSign();
 
