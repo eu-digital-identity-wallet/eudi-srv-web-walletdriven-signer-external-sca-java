@@ -102,14 +102,12 @@ public class SignaturesController {
                   "invalid_response: the documents to be signed should be sent in the request.");
         }
 
-
         if(requestDTO.getEndEntityCertificate() == null){
             logger.error("The certificate is missing from the request.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
         }
         X509Certificate certificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
         logger.info("Loaded signing certificate.");
-
 
         List<X509Certificate> certificateChain = new ArrayList<>();
         for(String c: requestDTO.getCertificateChain()){
@@ -163,7 +161,7 @@ public class SignaturesController {
         }
         logger.info("Loaded certificate chain.");
 
-        if(requestDTO.getDate() == -1){
+        if(requestDTO.getDate() == 0){
             logger.error("The date parameter is missing.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the date parameter is missing.");
         }
