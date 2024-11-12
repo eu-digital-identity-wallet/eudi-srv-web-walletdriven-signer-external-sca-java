@@ -161,8 +161,7 @@ public class SignaturesController {
         }
         logger.info("Loaded certificate chain.");
 
-        System.out.println(requestDTO.getDate());
-        if(requestDTO.getDate() == -1){
+        if(requestDTO.getDate() == 0){
             logger.error("The date parameter is missing.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the date parameter is missing.");
         }
