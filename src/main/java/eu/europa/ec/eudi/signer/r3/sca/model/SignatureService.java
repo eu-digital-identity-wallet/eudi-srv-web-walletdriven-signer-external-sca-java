@@ -47,13 +47,11 @@ public class SignatureService {
         for (DocumentsSignDocRequest document : documents) {
             fileLogger.info("Session_id:{},Payload Received:{ Document Hash:{}, conformance_level:{},Signature Format:{}, Hash Algorithm OID:{}, Signature Packaging:{}, Type of Container:{}}", RequestContextHolder.currentRequestAttributes().getSessionId(), digestAlgorithm, document.getConformance_level(), document.getSignature_format(), hashAlgorithmOID, document.getSigned_envelope_property(), document.getContainer());
 
-            /*if(document.getConformance_level().equals("Ades-B-LTA") || document.getConformance_level().equals("Ades-B-LT")){
-                System.out.println("here1");
+            if(document.getConformance_level().equals("Ades-B-LTA") || document.getConformance_level().equals("Ades-B-LT")){
                 for (X509Certificate cert : certificateChain) {
                     certificateSource.addCertificate(new CertificateToken(cert));
                 }
             }
-            System.out.println(certificateSource.getCertificates().size());*/
 
 			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, digestAlgorithm, encryptionAlgorithm,
 					certificate, date, certificateSource, certificateChain);
@@ -128,13 +126,11 @@ public class SignatureService {
             DocumentsSignDocRequest document = documents.get(i);
             String signatureValue = signatureObjects.get(i);
 
-            /*if(document.getConformance_level().equals("Ades-B-LTA") || document.getConformance_level().equals("Ades-B-LT")){
-                System.out.println("here2");
+            if(document.getConformance_level().equals("Ades-B-LTA") || document.getConformance_level().equals("Ades-B-LT")){
                 for (X509Certificate cert : certificateChain) {
                     certificateSource.addCertificate(new CertificateToken(cert));
                 }
             }
-            System.out.println(certificateSource.getCertificates().size());*/
 
 			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, digestAlgorithm, encryptionAlgorithm,
 					certificate, date, certificateSource, certificateChain);
