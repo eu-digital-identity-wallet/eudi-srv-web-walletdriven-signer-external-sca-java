@@ -1,5 +1,10 @@
 # EUDI Wallet-driven external SCA
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+
+:heavy_exclamation_mark: **Important!** Before you proceed, please read
+the [EUDI Wallet Reference Implementation project description](https://github.com/eu-digital-identity-wallet/.github/blob/main/profile/reference-implementation.md)
+
 ## Table of contents
 
 - [EUDI Wallet-driven external SCA](#eudi-wallet-driven-external-sca)
@@ -19,7 +24,10 @@
 
 ## Overview
 
+This is a REST API server that implements the wallet-driven SCA for the remote Qualified Electronic Signature component of the EUDI Wallet.
+The SCA provides endpoints that allow to calculate the hash value of a document and obtained the signed document given the signature value.
 
+Currently, the server is running at "https://walletcentric.signer.eudiw.dev", but you can [deploy](#deployment) it in your environment.
 
 ## Disclaimer
 
@@ -95,9 +103,40 @@ sequenceDiagram
 
 ### Calculate Hash Endpoint
 
+* Method: POST
+* URL: http://localhost:8086/signatures/calculate_hash
+
+This endpoint calculates the digest value of a given document.
+The payload of this request is a JSON object with the following attributes:
+* **documents**: a JSON array consisting of JSON objects, where each object contains a base64-encoded document content to be signed and additional request parameters.
+* **endEntityCertificate**: the base64-encoded certificate of the user.
+* **certificateChain**: a list of base64-encoded certificates representing the certificate chain to be used when calculating the digest value, excluding the end-entity certificate.
+* **hashAlgorithmOID**: the OID of the hash algorithm used to generate the digest value.
+
+The endpoint should return a JSON object with the following attributes:
+* **hashes**: a list of strings containing one or more BASE64 URL-encoded hash values to be signed.
+* **signature_date**: the date of the signature request, as a long integer, which will be used later when obtaining the signed document.
+
 ### Obtain Signed Document Endpoint
 
-## Deployment:
+* Method: POST
+* URL: http://localhost:8086/signatures/obtain_signed_doc
+
+This endpoint retrieves the signed document, given the document to be signed and the signature value.
+The payload of this request is a JSON object with the following attributes:
+* **documents**: a JSON array consisting of JSON objects, where each object contains a base64-encoded document content to be signed and additional request parameters.
+* **endEntityCertificate**: the base64-encoded certificate of the user.
+* **certificateChain**: a list of base64-encoded certificates representing the certificate chain to be used when calculating the digest value, excluding the end-entity certificate.
+* **hashAlgorithmOID**: the OID of the hash algorithm used to generate the digest value.
+* **returnValidationInfo**: a boolean indicating whether the server should return validation information (OCSP, CRL, or certificates).
+* **date**: the value of 'signature_date' received in the response of 'calculate_hash' endpoint.
+* **signatures**: the base64-encoded signature value of the document's digest.
+
+The endpoint returns a JSON object with the following attributes:
+* **documentWithSignature**: a base64-encoded signed document .
+* **signatureObject**: the signature string received in the request.
+
+## Deployment
 
 ### Requirements
 * Java version 17
@@ -107,16 +146,32 @@ sequenceDiagram
 
 1. **Create the application-auth.yml file**
 
-2. **Add the Timestamp Authority Certificate**
+    ```
+    oauth-client:
+        client-id: "{client-id}"
+        client-secret: "{client-secret}"
+        client-authentication-methods:
+         - "client_secret_basic"
+        redirect-uri: "{redirect-uri}"
+        scope: "credential"
+        default-authorization-server-url: "{url of the authorization server}"
+        app-redirect-uri: "{url of the wallet callback endpoint}"
+    ```
 
-    Add the TSA_CC.pem file in the resources folder, and define the parameter TrustedCertificates in the config.properties of the same folder with the path of the TSA_CC.pem file.
+2. **Add the Timestamp Authority Information**
 
-3. **Update the Timestamp Authority Url**
-    as
+    For certain conformance levels, access to a Timestamp Authority is required.
+   The Timestamp Authority to be used can be specified in the **application.yml** file located in the folder **src/main/resources/application.yml**.
+       
+    ```
+    trusted-certificate:
+        filename: # the path to the Timestamp Authority Certificate chosen
+        time-stamp-authority: # the url to the Timestamp Authority
+    ```
 
-4. **Run the Resource Server**
+3. **Run the Resource Server**
    
-    After configuring the previously mentioned settings and run the script
+    After configuring the previously mentioned settings and run the script:
    ```
    ./deploy_sca.sh
    ```
