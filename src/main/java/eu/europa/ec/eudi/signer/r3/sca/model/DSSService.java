@@ -1,5 +1,22 @@
+/*
+ Copyright 2024 European Commission
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
+import eu.europa.ec.eudi.signer.r3.sca.config.TrustedCertificateConfig;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
 import eu.europa.esig.dss.alert.LogOnStatusAlert;
@@ -54,12 +71,18 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.event.Level;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 
 @Service
 public class DSSService {
     private final static Logger logger = LogManager.getLogger(DSSService.class);
+	private final TrustedCertificateConfig trustedCertificateConfig;
+
+	public DSSService(@Autowired TrustedCertificateConfig trustedCertificateConfig){
+		this.trustedCertificateConfig = trustedCertificateConfig;
+	}
 
     public static SignatureLevel checkConformance_level(String conformance_level, String string) {
         String enumValue = mapToEnumValue(conformance_level, string);
@@ -169,7 +192,7 @@ public class DSSService {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    /**
+    /*
      * Function that returns the digest of the data to be signed from the document and parameters received
      */
     public byte[] getDigestOfDataToBeSigned(SignatureDocumentForm form) {
@@ -302,7 +325,7 @@ public class DSSService {
 			};
         }
 
-        String tspServer = "http://ts.cartaodecidadao.pt/tsa/server";
+        String tspServer = this.trustedCertificateConfig.getTimeStampAuthority();
         OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
         onlineTSPSource.setDataLoader(new TimestampDataLoader());
         service.setTspSource(onlineTSPSource);
