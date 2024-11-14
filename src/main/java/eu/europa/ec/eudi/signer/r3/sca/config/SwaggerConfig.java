@@ -14,16 +14,20 @@
  limitations under the License.
  */
 
-package eu.europa.ec.eudi.signer.r3.sca;
+package eu.europa.ec.eudi.signer.r3.sca.config;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@SpringBootTest
-class ScaApplicationTests {
+@Configuration
+public class SwaggerConfig {
 
-	@Test
-	void contextLoads() {
+	@Bean
+	GroupedOpenApi publicApi(){
+		return GroupedOpenApi.builder()
+			  .group("public-apis")
+			  .pathsToMatch("/**")
+			  .build();
 	}
-
 }
