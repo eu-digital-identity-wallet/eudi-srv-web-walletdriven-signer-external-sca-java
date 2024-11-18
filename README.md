@@ -8,24 +8,27 @@ the [EUDI Wallet Reference Implementation project description](https://github.co
 ## Table of contents
 
 - [EUDI Wallet-driven external SCA](#eudi-wallet-driven-external-sca)
-    - [Table of contents](#table-of-contents)
-    - [Overview](#overview)
-    - [Disclaimer](#disclaimer)
-    - [Sequence Diagrams](#sequence-diagrams)
-        - [Credential Authorization](#credential-authorization)
-    - [Endpoints](#endpoints)
-    - [Deployment](#deployment)
-        - [Requirements](#requirements)
-    - [How to contribute](#how-to-contribute)
-    - [License](#license)
-        - [Third-party component licenses](#third-party-component-licenses)
-        - [License details](#license-details)
+  - [Table of contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Disclaimer](#disclaimer)
+  - [Sequence Diagrams](#sequence-diagrams)
+    - [Credential Authorization](#credential-authorization)
+  - [Endpoints](#endpoints)
+    - [Calculate Hash Endpoint](#calculate-hash-endpoint)
+    - [Obtain Signed Document Endpoint](#obtain-signed-document-endpoint)
+  - [Deployment](#deployment)
+    - [Requirements](#requirements)
+    - [Signature Creation Application](#signature-creation-application)
+  - [How to contribute](#how-to-contribute)
+  - [License](#license)
+    - [Third-party component licenses](#third-party-component-licenses)
+    - [License details](#license-details)
 
 
 ## Overview
 
 This is a REST API server that implements the wallet-driven SCA for the remote Qualified Electronic Signature component of the EUDI Wallet.
-The SCA provides endpoints that allow to calculate the hash value of a document and obtained the signed document given the signature value.
+The SCA provides endpoints that allow to calculate the hash value of a document and obtain the signed document given the signature value.
 
 Currently, the server is running at "https://walletcentric.signer.eudiw.dev", but you can [deploy](#deployment) it in your environment.
 
@@ -189,7 +192,7 @@ See [licenses.md](licenses.md) for details.
 
 ### License details
 
-Copyright (c) 2023 European Commission
+Copyright (c) 2024 European Commission
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
