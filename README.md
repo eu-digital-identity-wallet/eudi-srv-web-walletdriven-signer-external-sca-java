@@ -32,6 +32,12 @@ The SCA provides endpoints that allow to calculate the hash value of a document 
 
 Currently, the server is running at "https://walletcentric.signer.eudiw.dev", but you can [deploy](#deployment) it in your environment.
 
+
+The Wallet Centric rQES Specification can be found [here](docs/rqes-walledriven.md).
+
+This server can be used with the servers from [eudi-srv-web-walletdriven-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-signer-qtsp-java)
+to deploy a remote Qualified Electronic Signature (rQES) component, as described in the previous specification.
+
 ## Disclaimer
 
 The released software is an initial development release version:
