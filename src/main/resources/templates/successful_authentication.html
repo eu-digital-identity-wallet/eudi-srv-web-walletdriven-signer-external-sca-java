@@ -20,9 +20,55 @@ limitations under the License.-->
 </head>
 <body>
     <p>Successful Authentication</p>
-    <form th:action="${url}" method="post" id="theForm">
-        <input type="hidden" name="access_token" th:value="${body}">
-        <input type="submit" value="Continue" title="Continue">
-    </form>
+
 </body>
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="Title" content="Error Page" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <link rel="icon" th:href="@{/static/images/favicon.gif}" type="image/gif" />
+    <link rel="stylesheet" th:href="@{/static/bootstrap-3.4.1-dist/css/bootstrap.min.css}" type="text/css" />
+    <link rel="stylesheet" th:href="@{/static/css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css}" media="all" type="text/css" />
+    <link rel="stylesheet" th:href="@{/static/fontawesome-free-5.15.4-web/css/fontawesome.min.css}" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript" id="jqueryId" th:src="@{/static/scripts/jquery/jquery-3.6.3.min.js}" charset="UTF-8"></script>
+    <script type="text/javascript" th:src="@{/static/scripts/promiz/promiz-1.0.6.js}" charset="UTF-8"></script>
+    <script type="text/javascript" th:src="@{/static/bootstrap-3.4.1-dist/js/bootstrap.min.js}" charset="UTF-8" defer="true"></script>
+    <script type="text/javascript" th:src="@{/static/scripts/html5shiv/html5shiv-3.7.3.js}" charset="UTF-8"></script>
+    <script type="text/javascript" th:src="@{/static/scripts/respond/respond-1.4.2.js}" charset="UTF-8"></script>
+    <meta name="referrer" content="no-referrer">
+    <script type="text/javascript" th:src="@{/static/scripts/loc/loc_en_9.7.1.20.1679559965505.js}" charset="UTF-8"></script>
+    <title>Signed Document</title>
+</head>
+<body id="responsive-main-nav1">
+<div class="main container-fluid">
+    <header role="banner" class="main-header">
+        <div class="container">
+            <div class="row"><img th:src="@{/static/images/ic-logo.svg}" alt="Logo"></div>
+        </div>
+    </header>
+    <div role="main" class="container">
+        <div class="content">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1>Successfully Signed Document</h1>
+                    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+                        <div class="genericErrors" id="genericErrorsDesc"></div>
+                        <form th:action="${url}" method="post" id="theForm">
+                            <input type="hidden" name="signed_document" th:value="${body}">
+                            <input type="submit" value="Continue" title="Continue to download file">
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </html>

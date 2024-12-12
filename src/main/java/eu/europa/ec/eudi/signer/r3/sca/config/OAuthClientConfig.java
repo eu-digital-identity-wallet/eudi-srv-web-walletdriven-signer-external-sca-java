@@ -23,11 +23,10 @@ import java.util.Set;
 public class OAuthClientConfig {
     private String clientId;
     private String clientSecret;
-    private Set<String> clientAuthenticationMethods;
     private String redirectUri;
     private String scope;
     private String defaultAuthorizationServerUrl;
-    private String appRedirectUri;
+    private String defaultResourceServerUrl;
 
     public String getClientId() {
         return clientId;
@@ -43,14 +42,6 @@ public class OAuthClientConfig {
 
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
-    }
-
-    public Set<String> getClientAuthenticationMethods() {
-        return clientAuthenticationMethods;
-    }
-
-    public void setClientAuthenticationMethods(Set<String> clientAuthenticationMethods) {
-        this.clientAuthenticationMethods = clientAuthenticationMethods;
     }
 
     public String getRedirectUri() {
@@ -77,11 +68,11 @@ public class OAuthClientConfig {
         this.defaultAuthorizationServerUrl = defaultAuthorizationServerUrl;
     }
 
-    public String getAppRedirectUri() {
-        return appRedirectUri;
+    public String getDefaultResourceServerUrl() {
+        return defaultResourceServerUrl;
     }
 
-    public void setAppRedirectUri(String appRedirectUri) {
-        this.appRedirectUri = appRedirectUri;
+    public void setDefaultResourceServerUrl(String defaultResourceServerUrl) {
+        this.defaultResourceServerUrl = defaultResourceServerUrl;
     }
 }

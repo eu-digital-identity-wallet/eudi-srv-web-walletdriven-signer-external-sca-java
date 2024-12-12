@@ -16,12 +16,12 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2.CredentialAuthorizationResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.credentialsInfo.CredentialsInfoRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.credentialsInfo.CredentialsInfoResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.oauth2.OAuth2AuthorizeRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signHash.SignaturesSignHashRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signHash.SignaturesSignHashResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.credentialsInfo.CredentialsInfoRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.credentialsInfo.CredentialsInfoResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.oauth2.OAuth2AuthorizeRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.oauth2.OAuth2TokenRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signHash.SignaturesSignHashRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signHash.SignaturesSignHashResponse;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -31,13 +31,12 @@ import java.util.Optional;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONObject;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -45,60 +44,63 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class QTSPClient {
-    public CredentialsInfoResponse requestCredentialInfo(String url, CredentialsInfoRequest credentialsInfoRequest, String authorizationBearerHeader){
+    private static final Logger log = LoggerFactory.getLogger(QTSPClient.class);
+
+    public CredentialsInfoResponse requestCredentialInfo(String resourceServerUrl, String authorizationHeader, CredentialsInfoRequest credentialsInfoRequest) throws Exception{
+        log.info("Making /credentials/info request to Resource Server {}", resourceServerUrl);
+        log.debug("Request Body: {}", credentialsInfoRequest.toString());
+
+		WebClient webClient = WebClient.builder()
+			  .baseUrl(resourceServerUrl)
+			  .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			  .build();
+
+		Mono<CredentialsInfoResponse> signHashResponse = webClient.post()
+			  .uri("/csc/v2/credentials/info")
+			  .bodyValue(credentialsInfoRequest)
+			  .header("Authorization", authorizationHeader)
+			  .exchangeToMono(response -> {
+				  if (response.statusCode().equals(HttpStatus.OK)) {
+					  return response.bodyToMono(CredentialsInfoResponse.class);
+				  } else {
+					  return response.createError();
+				  }
+			  });
+		log.info("Requested Credentials Info.");
+		return signHashResponse.onErrorMap(error -> new Exception(error.getMessage())).block();
+	}
+
+    public SignaturesSignHashResponse requestSignHash(String resourceServerUrl, String authorizationHeader, SignaturesSignHashRequest signHashRequest) {
+        log.info("Making /signatures/signHash request to Resource Server {}", resourceServerUrl);
+        log.debug("Request Body: {}", signHashRequest.toString());
+
         WebClient webClient = WebClient.builder()
-              .baseUrl(url)
-              .defaultCookie("cookieKey", "cookieValue")
-              .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-              .build();
-
-        Mono<CredentialsInfoResponse> signHashResponse = webClient.post()
-              .uri("/csc/v2/credentials/info")
-              .bodyValue(credentialsInfoRequest)
-              .header("Authorization", authorizationBearerHeader)
-
-              .exchangeToMono(response -> {
-                  if (response.statusCode().equals(HttpStatus.OK)) {
-                      return response.bodyToMono(CredentialsInfoResponse.class);
-                  } else {
-                      System.out.println(response.statusCode().value());
-                      return Mono.error(new Exception("Exception"));
-                  }
-              });
-
-        return signHashResponse.block();
-    }
-
-    public SignaturesSignHashResponse requestSignHash(String url, SignaturesSignHashRequest signHashRequest, String authorizationBearerHeader) {
-        System.out.println("url: "+url);
-        System.out.println("body: "+signHashRequest.toString());
-        System.out.println("header: "+authorizationBearerHeader);
-
-        WebClient webClient = WebClient.builder()
-                .baseUrl(url)
-                .defaultCookie("cookieKey", "cookieValue")
+                .baseUrl(resourceServerUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
         Mono<SignaturesSignHashResponse> signHashResponse = webClient.post()
                 .uri("/csc/v2/signatures/signHash")
                 .bodyValue(signHashRequest)
-                .header("Authorization", authorizationBearerHeader)
+                .header("Authorization", authorizationHeader)
                 .exchangeToMono(response -> {
                     if (response.statusCode().equals(HttpStatus.OK)) {
                         return response.bodyToMono(SignaturesSignHashResponse.class);
                     } else {
-                        return Mono.error(new Exception("Exception"));
+                        return response.createError();
                     }
                 });
-
+        log.info("Requested Sign Hash.");
         return signHashResponse.block();
     }
 
-    public CredentialAuthorizationResponse requestOAuth2Authorize(String url, OAuth2AuthorizeRequest authorizeRequest, String authorizationBearerHeader) throws Exception {
+    public String requestOAuth2Authorize(String authorizeServerUrl, OAuth2AuthorizeRequest authorizeRequest) throws Exception {
+        log.info("Making /oauth2/authorize request to Authorization Server {}", authorizeServerUrl);
+
         try(CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
+            // {as_url}/oauth2/authorize
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                  .fromUriString(url)
+                  .fromUriString(authorizeServerUrl)
                   .pathSegment("oauth2")
                   .pathSegment("authorize");
 
@@ -122,33 +124,43 @@ public class QTSPClient {
                   .queryParamIfPresent("hashAlgorithmOID", Optional.ofNullable(authorizeRequest.getHashAlgorithmOID()));
 
             String uri = uriBuilder.build().toString();
+            log.info("Request: {}", uri);
+
             HttpGet request = new HttpGet(uri);
             HttpResponse response = httpClient.execute(request);
-            System.out.println(response.getStatusLine().getStatusCode());
 
             if(response.getStatusLine().getStatusCode() == 302) {
                 String location = response.getLastHeader("Location").getValue();
-                System.out.println("Location: " + location);
-                String cookie = response.getLastHeader("Set-Cookie").getValue();
-                System.out.println("Cookie: " + cookie);
-                return new CredentialAuthorizationResponse(location, cookie);
+                log.info("Retrieved the authentication url: {}", location);
+                return location;
             }
 
             return null;
         }
     }
 
-    public JSONObject requestOAuth2Token(String urlBase, String code, String clientId, String redirectUri, String authorizationHeader) throws Exception{
-        String uriEndpoint = urlBase+"/oauth2/token";
-        URIBuilder uriBuilder = new URIBuilder(uriEndpoint);
-        uriBuilder.setParameter("grant_type", "authorization_code");
-        uriBuilder.setParameter("code", code);
-        uriBuilder.setParameter("client_id", clientId);
-        uriBuilder.setParameter("redirect_uri", redirectUri);
-        uriBuilder.setParameter("code_verifier",  "root");
-        String url = uriBuilder.build().toString();
-
+    public JSONObject requestOAuth2Token(String authorizeServerUrl, String authorizationHeader, OAuth2TokenRequest tokenRequest) throws Exception{
         try(CloseableHttpClient httpClient2 = HttpClientBuilder.create().build()) {
+
+            // {as_url}/oauth2/authorize
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                  .fromUriString(authorizeServerUrl)
+                  .pathSegment("oauth2")
+                  .pathSegment("token");
+
+            uriBuilder
+                  .queryParam("grant_type", "authorization_code")
+                  .queryParam("code", tokenRequest.getCode())
+                  .queryParamIfPresent("refresh_token", Optional.ofNullable(tokenRequest.getRefresh_token()))
+                  .queryParam("client_id", tokenRequest.getClient_id())
+                  .queryParamIfPresent("client_secret", Optional.ofNullable(tokenRequest.getClient_secret()))
+                  .queryParamIfPresent("client_assertion", Optional.ofNullable(tokenRequest.getClient_assertion()))
+                  .queryParamIfPresent("client_assertion_type", Optional.ofNullable(tokenRequest.getClient_assertion_type()))
+                  .queryParamIfPresent("redirect_uri", Optional.ofNullable(tokenRequest.getRedirect_uri()))
+                  .queryParamIfPresent("authorization_details", Optional.ofNullable(tokenRequest.getAuthorization_details()))
+                  .queryParam("code_verifier", tokenRequest.getCode_verifier());
+
+            String url = uriBuilder.build().toString();
             HttpPost followRequest = new HttpPost(url);
             followRequest.setHeader(org.apache.http.HttpHeaders.AUTHORIZATION, authorizationHeader);
 
