@@ -19,10 +19,9 @@ package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashResponse;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.model.CredentialsService;
-import eu.europa.ec.eudi.signer.r3.sca.model.SignatureService;
+import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
+import eu.europa.ec.eudi.signer.r3.sca.model.signature.SignatureService;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequest;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 
@@ -39,7 +38,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -54,58 +52,6 @@ public class SignaturesController {
                                 @Autowired SignatureService signatureService){
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
-    }
-
-    @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
-    public SignaturesSignDocResponse signDoc(
-          @RequestBody SignaturesSignDocRequest signDocRequest,
-          @RequestHeader (name="Authorization") String authorizationBearerHeader) {
-        logger.info("Request received for signing document: {}", signDocRequest);
-
-        if (signDocRequest.getCredentialID() == null) {
-            logger.error("The credentialId should be specified in the Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the credentialId should be specified.");
-        }
-
-        if (authorizationBearerHeader == null) {
-            logger.error("The current solution expects the credential token to be sent in the Authorization Header.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the authorization header with credential authorization should be present.");
-        }
-
-        if(signDocRequest.getDocuments() == null){
-            logger.error("The documents to be signed should be sent in the Http Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the documents to be signed should be sent in the request.");
-        }
-
-        if(signDocRequest.getSignature_date() == 0){
-            logger.error("The date when the credential authorization was requested should be sent in the Http Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the date when the credential authorization was requested should be sent in the request.");
-        }
-
-        try {
-            Date date = new Date(signDocRequest.getSignature_date());
-
-            CredentialsService.CertificateResponse certificates =
-                  this.credentialsService.getCertificateAndChainAndCommonSource(
-                  signDocRequest.getRequest_uri(),
-                  signDocRequest.getCredentialID(),
-                  authorizationBearerHeader);
-            logger.info("Retrieved all the required certificates.");
-
-            SignaturesSignDocResponse signaturesResponse = this.signatureService.handleDocumentsSignDocRequest(
-                  signDocRequest, authorizationBearerHeader, certificates.getCertificate(),
-                  certificates.getCertificateChain(), certificates.getSignAlgo(), date, certificates.getTsaCommonSource());
-            logger.info("Obtained the documents signed.");
-
-            return signaturesResponse;
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response");
-        }
     }
 
     @PostMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")

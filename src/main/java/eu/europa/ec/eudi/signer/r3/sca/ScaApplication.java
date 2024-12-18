@@ -26,8 +26,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({ OAuthClientConfig.class, TrustedCertificateConfig.class })
 public class ScaApplication {
 	public static void main(String[] args) {
-		//Logger libraryLogger = Logger.getLogger("eu.europa.esig");
-		//libraryLogger.setLevel(Level.FINE);
 		SpringApplication.run(ScaApplication.class, args);
 	}
 }
