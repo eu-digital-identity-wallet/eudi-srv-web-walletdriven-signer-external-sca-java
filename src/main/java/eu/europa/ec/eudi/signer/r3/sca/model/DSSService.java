@@ -28,18 +28,12 @@ import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
-import eu.europa.esig.dss.enumerations.ASiCContainerType;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.JWSSerializationType;
-import eu.europa.esig.dss.enumerations.SigDMechanism;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.enumerations.SignatureForm;
-import eu.europa.esig.dss.enumerations.SignatureLevel;
-import eu.europa.esig.dss.enumerations.SignaturePackaging;
+import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.pades.PAdESSignatureParameters;
-import eu.europa.esig.dss.pades.PAdESTimestampParameters;
+import eu.europa.esig.dss.pades.*;
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxNativeObjectFactory;
+import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESTimestampParameters;
@@ -63,17 +57,34 @@ import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
 import eu.europa.esig.dss.validation.RevocationDataVerifier;
 
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
+
+import javax.imageio.ImageIO;
+
+import static eu.europa.esig.dss.enumerations.SignatureForm.PAdES;
 
 @Service
 public class DSSService {
@@ -195,8 +206,7 @@ public class DSSService {
     /*
      * Function that returns the digest of the data to be signed from the document and parameters received
      */
-    public byte[] getDigestOfDataToBeSigned(SignatureDocumentForm form) {
-
+    public byte[] getDigestOfDataToBeSigned(SignatureDocumentForm form) throws IOException {
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
 		logger.info("Session_id:{},DataToBeSignedData Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
@@ -204,12 +214,24 @@ public class DSSService {
 		logger.info("Session_id:{},DataToBeSignedData Parameters Filled.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         DSSDocument toSignDocument = form.getDocumentToSign();
-        ToBeSigned toBeSigned = service.getDataToSign(toSignDocument, parameters);
+
+        ToBeSigned toBeSigned;
+		if(form.getSignatureForm().equals(SignatureForm.PAdES)) {
+			PAdESService s = (PAdESService) service;
+			PAdESSignatureParameters p = (PAdESSignatureParameters) parameters;
+			SignatureImageParameters imageParameters = setVisualSignature(toSignDocument, form.getCertificate(), form.getDate());
+			p.setImageParameters(imageParameters);
+			s.setPdfObjFactory(new PdfBoxNativeObjectFactory());
+			toBeSigned = service.getDataToSign(toSignDocument, parameters);
+		}
+		else toBeSigned = service.getDataToSign(toSignDocument, parameters);
+
+
 		return DSSUtils.digest(parameters.getDigestAlgorithm(), toBeSigned.getBytes());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public DSSDocument signDocument(SignatureDocumentForm form) {
+    public DSSDocument signDocument(SignatureDocumentForm form) throws IOException {
 
         DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
 		logger.info("Session_id:{}, signDocument Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
@@ -223,8 +245,80 @@ public class DSSService {
         signatureValue.setAlgorithm(SignatureAlgorithm.getAlgorithm(form.getEncryptionAlgorithm(), form.getDigestAlgorithm()));
         signatureValue.setValue(form.getSignatureValue());
 
-		return service.signDocument(toSignDocument, parameters, signatureValue);
+		if(form.getSignatureForm().equals(SignatureForm.PAdES)) {
+			PAdESService s = (PAdESService) service;
+			PAdESSignatureParameters p = (PAdESSignatureParameters) parameters;
+			SignatureImageParameters imageParameters = setVisualSignature(toSignDocument, form.getCertificate(), form.getDate());
+			p.setImageParameters(imageParameters);
+			s.setPdfObjFactory(new PdfBoxNativeObjectFactory());
+			return s.signDocument(toSignDocument, p, signatureValue);
+		}
+		else return service.signDocument(toSignDocument, parameters, signatureValue);
     }
+
+	private SignatureImageParameters setVisualSignature(DSSDocument document, X509Certificate certificate, Date date) throws IOException {
+
+		InputStream is = document.openStream();
+		PDDocument pdfDocument = PDDocument.load(is, (String) null);
+
+		// Initialize visual signature and configure
+		SignatureImageParameters imageParameters = createImageParameters();
+
+		SignatureImageTextParameters textParameters = createTextParameters(certificate, date);
+		imageParameters.setTextParameters(textParameters);
+
+		SignatureFieldParameters fieldParameters = createFieldRectangle(pdfDocument);
+		imageParameters.setFieldParameters(fieldParameters);
+
+		return imageParameters;
+	}
+
+
+
+	private SignatureFieldParameters createFieldRectangle(PDDocument pdfDocument) {
+		SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
+		// the origin is the left and top corner of the page
+		fieldParameters.setOriginX(20);
+		fieldParameters.setOriginY(20);
+		fieldParameters.setHeight(50);
+		fieldParameters.setPage(pdfDocument.getNumberOfPages());
+		fieldParameters.setRotation(VisualSignatureRotation.AUTOMATIC);
+		return fieldParameters;
+	}
+
+	private SignatureImageTextParameters createTextParameters(X509Certificate certificate, Date date){
+		X500Name x500Name = new X500Name(certificate.getSubjectX500Principal().getName());
+		RDN cn = x500Name.getRDNs(BCStyle.CN)[0];
+		String name = IETFUtils.valueToString(cn.getFirst().getValue());
+
+		SimpleDateFormat sdf = new SimpleDateFormat("EEEE dd MMM yyyy, HH:mm:ss z");
+		String dateString = sdf.format(date.getTime());
+
+		SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
+		DSSFont font = new PdfBoxNativeFont(PDType1Font.HELVETICA);
+		font.setSize(10);
+		textParameters.setFont(font);
+		textParameters.setText("Signing documents with EUDI Wallet\nSigner: "+name+"\n"+dateString);
+		textParameters.setTextColor(Color.BLACK);
+		textParameters.setPadding(10); // Defines a padding between the text and a border of its bounding area
+		textParameters.setTextWrapping(TextWrapping.FONT_BASED); // TextWrapping parameter allows defining the text wrapping behavior within  the signature field
+		textParameters.setSignerTextPosition(SignerTextPosition.RIGHT); // the text will be placed on the right side and the image on the right
+		textParameters.setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.LEFT); // Specifies a horizontal alignment of a text with respect to its area
+		textParameters.setSignerTextVerticalAlignment(SignerTextVerticalAlignment.TOP); // Specifies a vertical alignment of a text block with respect to a signature field area
+		return textParameters;
+	}
+
+	private SignatureImageParameters createImageParameters() throws IOException {
+		SignatureImageParameters imageParameters = new SignatureImageParameters();
+
+		// Visible signature positioning
+		imageParameters.setAlignmentHorizontal(VisualSignatureAlignmentHorizontal.LEFT);
+		imageParameters.setAlignmentVertical(VisualSignatureAlignmentVertical.BOTTOM);
+		imageParameters.setImageScaling(ImageScaling.ZOOM_AND_CENTER);
+		imageParameters.setImage(new InMemoryDocument(getClass().getResourceAsStream("/img/symbol.png")));
+
+		return imageParameters;
+	}
 
     @SuppressWarnings({ "rawtypes" })
     private AbstractSignatureParameters fillParameters(SignatureDocumentForm form) {
