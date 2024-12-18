@@ -81,10 +81,12 @@ public class OAuth2Service {
 	}
 
 	private JSONObject getOAuth2Token(String authorizationServerUrl, String code, String codeVerifier) throws Exception {
+
+
 		String authorizationHeader = getBasicAuthenticationHeader(this.oAuthClientConfig.getClientId(), this.oAuthClientConfig.getClientSecret());
 
 		OAuth2TokenRequest tokenRequest = new OAuth2TokenRequest();
-		tokenRequest.setGrant_type("authorization_code");
+		tokenRequest.setGrant_type(this.oAuthClientConfig.getAuthorizationGrantTypes());
 		tokenRequest.setCode(code);
 		tokenRequest.setClient_id(this.oAuthClientConfig.getClientId());
 		tokenRequest.setRedirect_uri(this.oAuthClientConfig.getRedirectUri());

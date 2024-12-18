@@ -59,11 +59,6 @@ public class CallbackController {
         this.sessionRegistry = sessionRegistry;
     }
 
-    // the resource server url
-    // the credential id to use
-    // the sad
-    // the document to signed
-    // hash algorithm oid
     @PostMapping(value="/start")
     public void signatureFlow(
           @RequestHeader(name="Authorization") String authorizationBearerHeader,
