@@ -168,7 +168,7 @@ The endpoint returns a JSON object with the following attributes:
 
 2. **Run the Resource Server**
    
-    After configuring the previously mentioned settings and run the script:
+    After configuring the previously mentioned settings, navigate to the **tools** directory and run the script:
    ```
    ./deploy_sca.sh
    ```
