@@ -16,17 +16,23 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 
 public class SignedDocumentRequest {
+	@NotBlank(message = "At least one document must be present in the request.")
 	private List<DocumentsSignDocRequest> documents;
+	@NotBlank(message = "The hashAlgorithmOID must be present.")
 	private String hashAlgorithmOID;
 	private boolean returnValidationInfo;
+	@NotBlank(message = "The certificate must be present.")
 	private String endEntityCertificate;
 	private List<String> certificateChain;
+	@NotBlank(message = "The 'date' value must be present.")
 	private long date;
+	@NotBlank(message = "The list of signatures must be present.")
 	List<String> signatures;
 
 	public List<DocumentsSignDocRequest> getDocuments() {

@@ -16,15 +16,19 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CalculateHashRequest {
+	@NotBlank(message = "At least one document must be present in the request.")
 	private List<DocumentsSignDocRequest> documents;
+	@NotBlank(message = "The certificate must be present.")
 	private String endEntityCertificate;
 	private List<String> certificateChain = new ArrayList<>();
+	@NotBlank(message = "The hashAlgorithmOID must be present.")
 	private String hashAlgorithmOID;
 
 	public List<DocumentsSignDocRequest> getDocuments() {

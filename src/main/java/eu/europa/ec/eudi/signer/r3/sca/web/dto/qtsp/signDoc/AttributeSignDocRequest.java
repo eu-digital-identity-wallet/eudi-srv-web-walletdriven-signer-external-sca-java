@@ -14,27 +14,28 @@
  limitations under the License.
  */
 
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signHash;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc;
 
-import java.util.List;
+import jakarta.validation.constraints.NotBlank;
 
-public class SignaturesSignHashResponse {
-    private List<String> signatures;
-    private String responseID;
+public class AttributeSignDocRequest {
+    @NotBlank
+    private String attribute_name;
+    private String attribute_value;
 
-    public List<String> getSignatures() {
-        return this.signatures;
+    public String getAttribute_name() {
+        return attribute_name;
     }
 
-    public void setSignatures(List<String> signatures) {
-        this.signatures = signatures;
+    public void setAttribute_name(String attribute_name) {
+        this.attribute_name = attribute_name;
     }
 
-    public String getResponseID() {
-        return this.responseID;
+    public String getAttribute_value() {
+        return attribute_value;
     }
 
-    public void setResponseID(String responseID) {
-        this.responseID = responseID;
+    public void setAttribute_value(String attribute_value) {
+        this.attribute_value = attribute_value;
     }
 }

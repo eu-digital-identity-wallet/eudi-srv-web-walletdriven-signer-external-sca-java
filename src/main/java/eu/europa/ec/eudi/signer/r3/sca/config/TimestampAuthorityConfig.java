@@ -18,10 +18,13 @@ package eu.europa.ec.eudi.signer.r3.sca.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "trusted-certificate")
-public class TrustedCertificateConfig {
+import java.util.List;
+
+@ConfigurationProperties(prefix = "timestamp-authority")
+public class TimestampAuthorityConfig {
 	private String filename;
-	private String timeStampAuthority;
+	private String serverUrl;
+	private List<String> supportedDigestAlgorithm;
 
 	public String getFilename() {
 		return filename;
@@ -31,11 +34,19 @@ public class TrustedCertificateConfig {
 		this.filename = filename;
 	}
 
-	public String getTimeStampAuthority() {
-		return timeStampAuthority;
+	public String getServerUrl() {
+		return serverUrl;
 	}
 
-	public void setTimeStampAuthority(String timeStampAuthority) {
-		this.timeStampAuthority = timeStampAuthority;
+	public void setServerUrl(String serverUrl) {
+		this.serverUrl = serverUrl;
+	}
+
+	public List<String> getSupportedDigestAlgorithm() {
+		return supportedDigestAlgorithm;
+	}
+
+	public void setSupportedDigestAlgorithm(List<String> supportedDigestAlgorithm) {
+		this.supportedDigestAlgorithm = supportedDigestAlgorithm;
 	}
 }

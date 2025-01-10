@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-package eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc;
+package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc;
 
 import java.util.List;
 

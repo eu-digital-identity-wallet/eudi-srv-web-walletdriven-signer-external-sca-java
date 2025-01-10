@@ -16,12 +16,10 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.model.signature;
 
-import eu.europa.ec.eudi.signer.r3.sca.model.QTSPClient;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signHash.SignaturesSignHashRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signHash.SignaturesSignHashResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.ValidationInfoSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.ValidationInfoSignDocResponse;
 import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.x509.CertificateToken;
@@ -30,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,24 +41,21 @@ import java.util.List;
 public class SignatureService {
 
     private static final Logger fileLogger = LoggerFactory.getLogger("FileLogger");
-    private final QTSPClient qtspClient;
     private final DSSService dssClient;
+    private final TimestampAuthorityConfig timestampAuthorityConfig;
 
-    public SignatureService(@Autowired QTSPClient qtspClient, @Autowired DSSService dssClient) {
-        this.qtspClient = qtspClient;
+    public SignatureService(@Autowired DSSService dssClient, @Autowired TimestampAuthorityConfig timestampAuthorityConfig) {
         this.dssClient = dssClient;
+        this.timestampAuthorityConfig = timestampAuthorityConfig;
     }
 
     public List<String> calculateHashValue(List<DocumentsSignDocRequest> documents, X509Certificate certificate,
-	        List<X509Certificate> certificateChain, String hashAlgorithmOID, Date date,
-            CommonTrustedCertificateSource certificateSource) throws Exception {
-
-		DigestAlgorithm digestAlgorithm = DSSService.checkDigestAlgorithm(hashAlgorithmOID);
-		EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
+                                           List<X509Certificate> certificateChain, CommonTrustedCertificateSource certificateSource,
+                                           String hashAlgorithmOID, Date date) throws Exception {
 
         List<String> hashes = new ArrayList<>();
         for (DocumentsSignDocRequest document : documents) {
-            fileLogger.info("Session_id:{},Payload Received:{ Document Hash:{}, conformance_level:{},Signature Format:{}, Hash Algorithm OID:{}, Signature Packaging:{}, Type of Container:{}}", RequestContextHolder.currentRequestAttributes().getSessionId(), digestAlgorithm, document.getConformance_level(), document.getSignature_format(), hashAlgorithmOID, document.getSigned_envelope_property(), document.getContainer());
+            fileLogger.info("Payload Received:{Conformance Level:{}, Signature Format:{}, Hash Algorithm OID:{}, Signature Packaging:{}, Type of Container:{}}", document.getConformance_level(), document.getSignature_format(), hashAlgorithmOID, document.getSigned_envelope_property(), document.getContainer());
 
             if(document.getConformance_level().equals("Ades-B-LTA") || document.getConformance_level().equals("Ades-B-LT")){
                 for (X509Certificate cert : certificateChain) {
@@ -69,8 +63,7 @@ public class SignatureService {
                 }
             }
 
-			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, digestAlgorithm, encryptionAlgorithm,
-					certificate, date, certificateSource, certificateChain);
+			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, hashAlgorithmOID, certificate, date, certificateSource, certificateChain);
 
 			byte[] dataToBeSigned = dssClient.getDigestOfDataToBeSigned(signatureDocumentForm);
             if (dataToBeSigned == null) continue;
@@ -79,42 +72,20 @@ public class SignatureService {
             String dataToBeSignedURLEncoded = URLEncoder.encode(dataToBeSignedStringEncoded, StandardCharsets.UTF_8);
             hashes.add(dataToBeSignedURLEncoded);
         }
-        fileLogger.info("Session_id:{},DataToBeSigned successfully created", RequestContextHolder.currentRequestAttributes().getSessionId());
+
+        fileLogger.info("DataToBeSigned successfully created");
         return hashes;
     }
 
-
-    public SignaturesSignDocResponse handleDocumentsSignDocRequest(
-          String resourceServerUrl, String authorizationHeader, List<DocumentsSignDocRequest> documents, List<String> hashes,
-          String credentialID, X509Certificate certificate, List<X509Certificate> certificateChain,
-          CommonTrustedCertificateSource certificateSource, String signAlgo, String hashAlgorithmOID, Date date) throws Exception {
-
-        SignaturesSignHashRequest signHashRequest = new SignaturesSignHashRequest();
-        signHashRequest.setCredentialID(credentialID);
-        signHashRequest.setSAD(null);
-        signHashRequest.setHashes(hashes);
-        signHashRequest.setHashAlgorithmOID(hashAlgorithmOID);
-        signHashRequest.setSignAlgo(signAlgo);
-        signHashRequest.setSignAlgoParams(null);
-        signHashRequest.setOperationMode("S");
-        signHashRequest.setValidity_period(-1);
-        signHashRequest.setResponse_uri(null);
-
-        SignaturesSignHashResponse signHashResponse = qtspClient.requestSignHash(resourceServerUrl, authorizationHeader, signHashRequest);
-        List<String> allSignaturesObjects = signHashResponse.getSignatures();
-
-        return buildSignedDocument(documents, hashAlgorithmOID, false, certificate, certificateChain, date, certificateSource, allSignaturesObjects);
-    }
-
     public SignaturesSignDocResponse buildSignedDocument(
-            List<DocumentsSignDocRequest> documents, String hashAlgorithmOID, boolean returnValidationInfo,
-            X509Certificate certificate, List<X509Certificate> certificateChain, Date date,
-            CommonTrustedCertificateSource certificateSource, List<String> signatureObjects) throws Exception {
+          List<DocumentsSignDocRequest> documents, String hashAlgorithmOID, boolean returnValidationInfo,
+          X509Certificate certificate, List<X509Certificate> certificateChain, CommonTrustedCertificateSource certificateSource,
+          Date date, List<String> signatureObjects) throws Exception {
 
-        if (signatureObjects.size() != documents.size()) return new SignaturesSignDocResponse();
-
-		DigestAlgorithm digestAlgorithm = DSSService.checkDigestAlgorithm(hashAlgorithmOID);
-		EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
+        if (signatureObjects.size() != documents.size()) {
+            fileLogger.error("The number of signature received doesn't match the number of documents to be signed.");
+            throw new Exception("The number of signature received doesn't match the number of documents to be signed.");
+        }
 
         List<String> DocumentWithSignature = new ArrayList<>();
         for (int i = 0; i < documents.size(); i++) {
@@ -127,11 +98,11 @@ public class SignatureService {
                 }
             }
 
-			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, digestAlgorithm, encryptionAlgorithm, certificate, date, certificateSource, certificateChain);
+			SignatureDocumentForm signatureDocumentForm = getSignatureForm(document, hashAlgorithmOID, certificate, date, certificateSource, certificateChain);
             signatureDocumentForm.setSignatureValue(Base64.getDecoder().decode(signatureValue));
 
             DSSDocument docSigned = dssClient.signDocument(signatureDocumentForm);
-            fileLogger.info("Session_id:{},Document successfully signed.", RequestContextHolder.currentRequestAttributes().getSessionId());
+            fileLogger.info("Document successfully signed.");
             String signedDocumentString = getSignedDocumentString(document, docSigned);
             DocumentWithSignature.add(signedDocumentString);
         }
@@ -142,17 +113,54 @@ public class SignatureService {
         return new SignaturesSignDocResponse(DocumentWithSignature, signatureObjects, null, validationInfo);
     }
 
+    public void validateSignatureRequest(List<DocumentsSignDocRequest> documents, String hashAlgorithmOID) throws Exception{
+        // validate if the hashAlgorithmOID is supported by the TSA
+        if (!timestampAuthorityConfig.getSupportedDigestAlgorithm().contains(hashAlgorithmOID)){
+            fileLogger.error("The hashAlgorithmOID chosen is not supported by the TSA.");
+            throw new Exception("The hashAlgorithmOID chosen is not supported by the TSA.");
+        }
 
-    private SignatureDocumentForm getSignatureForm(
-          DocumentsSignDocRequest document, DigestAlgorithm digestAlgorithm, EncryptionAlgorithm encryptionAlgorithm,
-          X509Certificate certificate, Date date, CommonTrustedCertificateSource certificateSource, List<X509Certificate> certificateChain){
+        // validate if the hashAlgorithmOID is a supported digestAlgorithm
+        try {
+            DSSService.getDigestAlgorithmFromOID(hashAlgorithmOID);
+        } catch (Exception e){
+            fileLogger.error("It was impossible to retrieve the hashAlgorithmOID requested. {}", e.getMessage());
+            throw new Exception("The hashAlgorithmOID in the request is invalid.");
+        }
+
+        // validate the data in the documents
+        for (DocumentsSignDocRequest doc: documents){
+            try{
+                doc.isValid();
+            }catch (Exception e){
+                fileLogger.error(e.getMessage());
+                throw e;
+            }
+        }
+    }
+
+    private SignatureDocumentForm getSignatureForm(DocumentsSignDocRequest document, String hashAlgorithmOID,
+          X509Certificate certificate, Date date, CommonTrustedCertificateSource certificateSource, List<X509Certificate> certificateChain) throws Exception{
 
         DSSDocument dssDocument = dssClient.loadDssDocument(document.getDocument());
 
-        SignatureLevel signatureLevel = DSSService.checkConformance_level(document.getConformance_level(), document.getSignature_format());
-        SignaturePackaging signaturePackaging = DSSService.checkEnvProps(document.getSigned_envelope_property());
-        ASiCContainerType asicContainerType = DSSService.checkASiCContainerType(document.getContainer());
-        SignatureForm signatureForm = DSSService.checkSignForm(document.getSignature_format());
+        SignaturePackaging signaturePackaging;
+        ASiCContainerType asicContainerType;
+        SignatureLevel signatureLevel;
+        DigestAlgorithm digestAlgorithm;
+        SignatureForm signatureFormat;
+        try {
+            signaturePackaging = DSSService.getSignaturePackaging(document.getSigned_envelope_property());
+            asicContainerType = DSSService.getASiCContainerType(document.getContainer());
+            signatureLevel = DSSService.getSignatureLevel(document.getConformance_level(), document.getSignature_format());
+            digestAlgorithm = DSSService.getDigestAlgorithmFromOID(hashAlgorithmOID);
+            signatureFormat = DSSService.getSignatureForm(document.getSignature_format());
+        }catch (Exception e){
+            fileLogger.error("There was an error when trying to retrieve the required information for the SignatureDocumentForm from the information received. {}", e.getMessage());
+            throw e;
+        }
+
+        EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
 
         SignatureDocumentForm signatureDocumentForm = new SignatureDocumentForm();
         signatureDocumentForm.setDocumentToSign(dssDocument);
@@ -160,17 +168,16 @@ public class SignatureService {
         signatureDocumentForm.setContainerType(asicContainerType);
         signatureDocumentForm.setSignatureLevel(signatureLevel);
         signatureDocumentForm.setDigestAlgorithm(digestAlgorithm);
-        signatureDocumentForm.setSignatureForm(signatureForm);
+        signatureDocumentForm.setSignatureForm(signatureFormat);
         signatureDocumentForm.setCertificate(certificate);
         signatureDocumentForm.setDate(date);
         signatureDocumentForm.setTrustedCertificates(certificateSource);
-        signatureDocumentForm.setSignatureForm(signatureForm);
+        signatureDocumentForm.setSignatureForm(signatureFormat);
         signatureDocumentForm.setCertChain(certificateChain);
         signatureDocumentForm.setEncryptionAlgorithm(encryptionAlgorithm);
 
         return signatureDocumentForm;
     }
-
 
     private String getSignedDocumentString(DocumentsSignDocRequest document, DSSDocument docSigned) throws Exception{
         try {

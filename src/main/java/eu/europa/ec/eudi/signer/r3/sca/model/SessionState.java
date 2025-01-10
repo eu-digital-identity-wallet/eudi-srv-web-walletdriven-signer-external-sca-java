@@ -1,6 +1,6 @@
 package eu.europa.ec.eudi.signer.r3.sca.model;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
 
 import java.security.cert.X509Certificate;
 import java.util.List;

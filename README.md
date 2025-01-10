@@ -153,32 +153,20 @@ The endpoint returns a JSON object with the following attributes:
 
 ### Signature Creation Application
 
-1. **Create the application-auth.yml file**
+1. **Add the Timestamp Authority Information**
 
-    ```
-    oauth-client:
-        client-id: "{client-id}"
-        client-secret: "{client-secret}"
-        client-authentication-methods:
-         - "client_secret_basic"
-        redirect-uri: "{redirect-uri}"
-        scope: "credential"
-        default-authorization-server-url: "{url of the authorization server}"
-        app-redirect-uri: "{url of the wallet callback endpoint}"
-    ```
-
-2. **Add the Timestamp Authority Information**
-
-    For certain conformance levels, access to a Timestamp Authority is required.
+   For certain conformance levels, access to a Timestamp Authority is required.
    The Timestamp Authority to be used can be specified in the **application.yml** file located in the folder **src/main/resources/application.yml**.
        
     ```
-    trusted-certificate:
-        filename: # the path to the Timestamp Authority Certificate chosen
-        time-stamp-authority: # the url to the Timestamp Authority
-    ```
+    timestamp-authority:
+        filename: # the path to the certificate of the Timestamp Authority chosen
+        server-url: # the url of the Timestamp Authority
+        supported-digest-algorithm: # the list of the digest algorithms that are supported by the TSA.
+        - "2.16.840.1.101.3.4.2.1"
+   ```
 
-3. **Run the Resource Server**
+2. **Run the Resource Server**
    
     After configuring the previously mentioned settings and run the script:
    ```

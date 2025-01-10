@@ -15,9 +15,6 @@
 spring:
   application:
     name: sca
-  profiles:
-    include:
-      - "auth"
 
 server:
   port: 8086
@@ -30,6 +27,8 @@ logging:
     org.hibernate: ERROR
     org.springframework.web: INFO
 
-trusted-certificate:
+timestamp-authority:
   filename: "src/main/resources/TSA_CC.pem"
-  time-stamp-authority: "http://ts.cartaodecidadao.pt/tsa/server"
+  server-url: "http://ts.cartaodecidadao.pt/tsa/server"
+  supported-digest-algorithm:
+    - "2.16.840.1.101.3.4.2.1"
