@@ -35,7 +35,7 @@ Currently, the server is running at "https://walletcentric.signer.eudiw.dev", bu
 
 The Wallet Centric rQES Specification can be found [here](docs/rqes-walledriven.md).
 
-This server can be used with the servers from [eudi-srv-web-walletdriven-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-signer-qtsp-java)
+This server can be used with the servers from [eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java)
 to deploy a remote Qualified Electronic Signature (rQES) component, as described in the previous specification.
 
 ## Disclaimer
@@ -163,7 +163,7 @@ The endpoint returns a JSON object with the following attributes:
         filename: # the path to the certificate of the Timestamp Authority chosen
         server-url: # the url of the Timestamp Authority
         supported-digest-algorithm: # the list of the digest algorithms that are supported by the TSA.
-        - "2.16.840.1.101.3.4.2.1"
+        - Example: "2.16.840.1.101.3.4.2.1"
    ```
 
 2. **Run the Resource Server**
