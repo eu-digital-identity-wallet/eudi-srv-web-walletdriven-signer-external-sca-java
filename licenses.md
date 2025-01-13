@@ -1,4 +1,4 @@
-# TrustProvider Signer
+# EUDI Wallet-Driven External SCA
 
 ## Dependency License Report
 
