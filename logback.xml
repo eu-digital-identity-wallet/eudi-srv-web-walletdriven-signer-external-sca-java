@@ -35,7 +35,7 @@
         </encoder>
     </appender>
 
-    <root level="DEBUG"> <!-- Log Level -->
+    <root level="info"> <!-- Log Level -->
         <appender-ref ref="CONSOLE" /> <!-- Logs for the console -->
         <appender-ref ref="FILE" /> <!-- Logs for the file -->
     </root>

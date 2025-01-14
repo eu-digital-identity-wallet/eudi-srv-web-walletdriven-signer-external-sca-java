@@ -2,10 +2,13 @@
 
 ## [0.3.0]
 
-_2 Dec 2024_
+_13 Jan 2025_
 
 ### Added:
--  Visible representation of the PDF signature.
+- Visible representation of the PDF signature.
+
+### Fixed
+- Remove unused code
 
 ## [0.2.0]
 

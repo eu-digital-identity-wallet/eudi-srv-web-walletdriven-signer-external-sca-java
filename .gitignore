@@ -1,6 +1,5 @@
 tests/*
 src/main/resources/application-auth.yml
-src/main/resources/application-dev.yml
 src/main/resources/TSA_CC.pem
 
 # Compiled class file

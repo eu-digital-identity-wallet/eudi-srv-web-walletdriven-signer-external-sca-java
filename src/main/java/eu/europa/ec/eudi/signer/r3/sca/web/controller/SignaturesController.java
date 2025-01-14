@@ -18,11 +18,10 @@ package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashRequest;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.signDoc.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.model.CredentialsService;
-import eu.europa.ec.eudi.signer.r3.sca.model.SignatureService;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
+import eu.europa.ec.eudi.signer.r3.sca.model.signature.SignatureService;
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequest;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 
@@ -39,154 +38,133 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping(value = "/signatures")
 public class SignaturesController {
     private final Logger logger = LogManager.getLogger(SignaturesController.class);
-
     private final SignatureService signatureService;
     private final CredentialsService credentialsService;
 
-    public SignaturesController(@Autowired CredentialsService credentialsService,
-                                @Autowired SignatureService signatureService){
+    public SignaturesController(@Autowired CredentialsService credentialsService, @Autowired SignatureService signatureService){
         this.credentialsService = credentialsService;
         this.signatureService = signatureService;
     }
 
-    @PostMapping(value = "/signDoc", consumes = "application/json", produces = "application/json")
-    public SignaturesSignDocResponse signDoc(
-          @RequestBody SignaturesSignDocRequest signDocRequest,
-          @RequestHeader (name="Authorization") String authorizationBearerHeader) {
-        logger.info("Request received for signing document: {}", signDocRequest);
-
-        if (signDocRequest.getCredentialID() == null) {
-            logger.error("The credentialId should be specified in the Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the credentialId should be specified.");
-        }
-
-        if (authorizationBearerHeader == null) {
-            logger.error("The current solution expects the credential token to be sent in the Authorization Header.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the authorization header with credential authorization should be present.");
-        }
-
-        if(signDocRequest.getDocuments() == null){
-            logger.error("The documents to be signed should be sent in the Http Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the documents to be signed should be sent in the request.");
-        }
-
-        if(signDocRequest.getSignature_date() == 0){
-            logger.error("The date when the credential authorization was requested should be sent in the Http Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the date when the credential authorization was requested should be sent in the request.");
-        }
+    /**
+     * Endpoints to calculate the hash of given documents using a specified certificate, certificate chain and hash algorithm.
+     * @param calculateHashRequestBody A JSON object containing:
+     *                                - a list of documents
+     *                                - the certificate and certificate chain
+     *                                - hash algorithm OID
+     *                                Each document in the list should be accompanied by the configuration of the signed document to be generated
+     * @return A JSON object containing:
+     *         - the hashes of the documents
+     *         - the date (as a long value) indicating when the hash was created
+     */
+    @PostMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
+    public CalculateHashResponse calculateHash(@RequestBody CalculateHashRequest calculateHashRequestBody) throws Exception{
+        validateCalculateHashRequest(calculateHashRequestBody.getDocuments(), calculateHashRequestBody.getEndEntityCertificate(), calculateHashRequestBody.getHashAlgorithmOID());
+        logger.info("Validated that request contains the required values.");
 
         try {
-            Date date = new Date(signDocRequest.getSignature_date());
-
-            CredentialsService.CertificateResponse certificates =
-                  this.credentialsService.getCertificateAndChainAndCommonSource(
-                  signDocRequest.getRequest_uri(),
-                  signDocRequest.getCredentialID(),
-                  authorizationBearerHeader);
-            logger.info("Retrieved all the required certificates.");
-
-            SignaturesSignDocResponse signaturesResponse = this.signatureService.handleDocumentsSignDocRequest(
-                  signDocRequest, authorizationBearerHeader, certificates.getCertificate(),
-                  certificates.getCertificateChain(), certificates.getSignAlgo(), date, certificates.getTsaCommonSource());
-            logger.info("Obtained the documents signed.");
-
-            return signaturesResponse;
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response");
-        }
-    }
-
-    @PostMapping(value="/calculate_hash", consumes = "application/json", produces = "application/json")
-    public CalculateHashResponse calculateHash(@RequestBody CalculateHashRequest requestDTO) throws Exception{
-
-        List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
-        if(requestDTO.getDocuments() == null){
-            logger.error("The documents to be signed should be sent in the Http Request Body.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                  "invalid_response: the documents to be signed should be sent in the request.");
+            this.signatureService.validateSignatureRequest(calculateHashRequestBody.getDocuments(), calculateHashRequestBody.getHashAlgorithmOID());
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
-        if(requestDTO.getEndEntityCertificate() == null){
-            logger.error("The certificate is missing from the request.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
-        }
-        X509Certificate certificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
+        List<DocumentsSignDocRequest> documents = calculateHashRequestBody.getDocuments();
+        logger.info("Retrieve document from request.");
+
+        String hashAlgorithmOID = calculateHashRequestBody.getHashAlgorithmOID();
+        logger.info("Retrieve hashAlgorithmOID from request.");
+
+        X509Certificate certificate = this.credentialsService.base64DecodeCertificate(calculateHashRequestBody.getEndEntityCertificate());
         logger.info("Loaded signing certificate.");
 
         List<X509Certificate> certificateChain = new ArrayList<>();
-        for(String c: requestDTO.getCertificateChain()){
+        for(String c: calculateHashRequestBody.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
         logger.info("Loaded certificate chain.");
 
-        String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
-        if(hashAlgorithmOID == null){
-            logger.error("The digest/hash algorithm oid parameter is missing.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the hash algorithm oid is missing.");
-        }
-
-        Date date = new Date();
-
         CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
         logger.info("Loaded certificate source.");
 
-        List<String> hashes = this.signatureService.calculateHashValue(documents, certificate, certificateChain, hashAlgorithmOID, date, certificateSource);
+        Date date = new Date();
+
+        List<String> hashes = this.signatureService.calculateHashValue(documents, certificate, certificateChain, certificateSource, hashAlgorithmOID, date);
         logger.info("Created list of hashes.");
 
 		return new CalculateHashResponse(hashes, date.getTime());
     }
 
-    @PostMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
-    public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequest requestDTO) throws Exception{
-        List<DocumentsSignDocRequest> documents = requestDTO.getDocuments();
+    private void validateCalculateHashRequest(List<DocumentsSignDocRequest> documents, String endEntityCertificate, String hashAlgorithmOID) throws ResponseStatusException{
         if(documents == null || documents.isEmpty()){
             logger.error("The documents to be signed should be sent in the Http Request Body.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                   "invalid_response: the documents to be signed should be sent in the request.");
         }
 
-        String hashAlgorithmOID = requestDTO.getHashAlgorithmOID();
+        if(endEntityCertificate == null){
+            logger.error("The certificate is missing from the request.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
+        }
+
         if(hashAlgorithmOID == null){
             logger.error("The digest/hash algorithm oid parameter is missing.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the hash algorithm oid is missing.");
         }
+    }
 
-        boolean returnValidationInfo = requestDTO.isReturnValidationInfo();
+    /**
+     * Endpoints to calculate the hash of given documents using a specified certificate, certificate chain and hash algorithm.
+     * @param signedDocumentRequestBody A JSON object containing:
+     *                                - a list of documents
+     *                                - the certificate and certificate chain
+     *                                - hash algorithm OID
+     *                                Each document in the list should be accompanied by the configuration of the signed document to be generated
+     * @return A JSON object containing:
+     *         - the hashes of the documents
+     *         - the date (as a long value) indicating when the hash was created
+     */
+    @PostMapping(value="/obtain_signed_doc", consumes = "application/json", produces = "application/json")
+    public SignaturesSignDocResponse obtainSignedDocuments(@RequestBody SignedDocumentRequest signedDocumentRequestBody) throws Exception{
+        validateCalculateHashRequest(signedDocumentRequestBody.getDocuments(), signedDocumentRequestBody.getEndEntityCertificate(), signedDocumentRequestBody.getHashAlgorithmOID());
 
-        if(requestDTO.getEndEntityCertificate() == null){
-            logger.error("The certificate is missing from the request.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the certificate parameter is missing.");
+        try {
+            this.signatureService.validateSignatureRequest(signedDocumentRequestBody.getDocuments(), signedDocumentRequestBody.getHashAlgorithmOID());
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-        X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(requestDTO.getEndEntityCertificate());
+
+        List<DocumentsSignDocRequest> documents = signedDocumentRequestBody.getDocuments();
+        logger.info("Retrieve document from request.");
+
+        String hashAlgorithmOID = signedDocumentRequestBody.getHashAlgorithmOID();
+        logger.info("Retrieve hashAlgorithmOID from request.");
+
+        boolean returnValidationInfo = signedDocumentRequestBody.isReturnValidationInfo();
+
+        X509Certificate signingCertificate = this.credentialsService.base64DecodeCertificate(signedDocumentRequestBody.getEndEntityCertificate());
 
         List<X509Certificate> certificateChain = new ArrayList<>();
-        for(String c: requestDTO.getCertificateChain()){
+        for(String c: signedDocumentRequestBody.getCertificateChain()){
             certificateChain.add(this.credentialsService.base64DecodeCertificate(c));
         }
         logger.info("Loaded certificate chain.");
 
-        if(requestDTO.getDate() == 0){
+        if(signedDocumentRequestBody.getDate() == 0){
             logger.error("The date parameter is missing.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the date parameter is missing.");
         }
-        Date date = new Date(requestDTO.getDate());
+        Date date = new Date(signedDocumentRequestBody.getDate());
 
         CommonTrustedCertificateSource certificateSource = this.credentialsService.getCommonTrustedCertificateSource();
-        logger.info("Loaded the certificate source");
+        logger.info("Loaded certificate source");
 
-        List<String> signatures = requestDTO.getSignatures();
+        List<String> signatures = signedDocumentRequestBody.getSignatures();
         if(signatures == null || signatures.isEmpty()){
             logger.error("The signature parameter is missing.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: the signature parameter is missing.");
@@ -196,7 +174,6 @@ public class SignaturesController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_response: " +
                   "the number of signatures received doesn't match the number of documents to signed received.");
         }
-        return this.signatureService.buildSignedDocument(documents, hashAlgorithmOID, returnValidationInfo, signingCertificate,
-              certificateChain, date, certificateSource, signatures);
+        return this.signatureService.buildSignedDocument(documents, hashAlgorithmOID, returnValidationInfo, signingCertificate, certificateChain, certificateSource, date, signatures);
     }
 }

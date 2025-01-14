@@ -35,7 +35,7 @@ Currently, the server is running at "https://walletcentric.signer.eudiw.dev", bu
 
 The Wallet Centric rQES Specification can be found [here](docs/rqes-walledriven.md).
 
-This server can be used with the servers from [eudi-srv-web-walletdriven-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-signer-qtsp-java)
+This server can be used with the servers from [eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java)
 to deploy a remote Qualified Electronic Signature (rQES) component, as described in the previous specification.
 
 ## Disclaimer
@@ -153,34 +153,22 @@ The endpoint returns a JSON object with the following attributes:
 
 ### Signature Creation Application
 
-1. **Create the application-auth.yml file**
+1. **Add the Timestamp Authority Information**
 
-    ```
-    oauth-client:
-        client-id: "{client-id}"
-        client-secret: "{client-secret}"
-        client-authentication-methods:
-         - "client_secret_basic"
-        redirect-uri: "{redirect-uri}"
-        scope: "credential"
-        default-authorization-server-url: "{url of the authorization server}"
-        app-redirect-uri: "{url of the wallet callback endpoint}"
-    ```
-
-2. **Add the Timestamp Authority Information**
-
-    For certain conformance levels, access to a Timestamp Authority is required.
+   For certain conformance levels, access to a Timestamp Authority is required.
    The Timestamp Authority to be used can be specified in the **application.yml** file located in the folder **src/main/resources/application.yml**.
        
     ```
-    trusted-certificate:
-        filename: # the path to the Timestamp Authority Certificate chosen
-        time-stamp-authority: # the url to the Timestamp Authority
-    ```
+    timestamp-authority:
+        filename: # the path to the certificate of the Timestamp Authority chosen
+        server-url: # the url of the Timestamp Authority
+        supported-digest-algorithm: # the list of the digest algorithms that are supported by the TSA.
+        - Example: "2.16.840.1.101.3.4.2.1"
+   ```
 
-3. **Run the Resource Server**
+2. **Run the Resource Server**
    
-    After configuring the previously mentioned settings and run the script:
+    After configuring the previously mentioned settings, navigate to the **tools** directory and run the script:
    ```
    ./deploy_sca.sh
    ```

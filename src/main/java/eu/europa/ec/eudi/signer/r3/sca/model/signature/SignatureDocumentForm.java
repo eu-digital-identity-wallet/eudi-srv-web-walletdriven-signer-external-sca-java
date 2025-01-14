@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-package eu.europa.ec.eudi.signer.r3.sca.model;
+package eu.europa.ec.eudi.signer.r3.sca.model.signature;
 
 import java.security.cert.X509Certificate;
 
