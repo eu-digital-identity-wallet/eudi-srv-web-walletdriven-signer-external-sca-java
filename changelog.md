@@ -7,8 +7,9 @@ _13 Jan 2025_
 ### Added:
 - Visible representation of the PDF signature.
 
-### Fixed
-- Remove unused code
+### Fixed:
+- Remove unused code.
+- Bugs found during Signature Parameter combinations testing.
 
 ## [0.2.0]
 
