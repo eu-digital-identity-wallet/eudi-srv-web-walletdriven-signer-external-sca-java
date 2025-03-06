@@ -25,6 +25,8 @@ public class DocumentsSignDocRequest {
     @NotBlank(message = "The document must be present in the request")
     private String document;
 
+    private String document_name;
+
     @NotBlank(message = "Signature format cannot be blank")
     @Pattern(regexp = "P|C|X|J", message = "Invalid signature format")
     private String signature_format = null;
@@ -47,6 +49,14 @@ public class DocumentsSignDocRequest {
 
     public void setDocument(String document) {
         this.document = document;
+    }
+
+    public String getDocument_name() {
+        return document_name;
+    }
+
+    public void setDocument_name(String document_name) {
+        this.document_name = document_name;
     }
 
     public String getSignature_format() {

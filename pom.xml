@@ -30,6 +30,17 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+				<artifactId>dss-bom</artifactId>
+				<version>6.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -86,6 +97,11 @@
             <artifactId>dss-xades</artifactId>
             <version>6.0</version>
         </dependency>
+		<dependency>
+			<groupId>eu.europa.ec.joinup.sd-dss</groupId>
+			<artifactId>dss-xml-utils</artifactId>
+			<version>6.0</version>
+		</dependency>
 		<dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-jades</artifactId>
