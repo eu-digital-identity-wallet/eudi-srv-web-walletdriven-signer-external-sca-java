@@ -22,7 +22,6 @@ server:
     include-message: always
 
 logging:
-  config: logback.xml
   level:
     org.hibernate: ERROR
     org.springframework.web: INFO

@@ -1,0 +1,8 @@
+services:
+  sca_external:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wallet_driven_sca
+    ports:
+      - "8086:8086"

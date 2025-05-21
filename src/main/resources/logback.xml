@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2024 European Commission
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<configuration>
+    <property name="LOGS" value="./logs" />
+
+    <!-- Set the appender for the console-->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%method:%line %logger{36}: - %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Set the appender for the log file -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS}/sca_logger.log</file> <!-- Location and name of log file -->
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%method:%line %logger{36}: - %msg%n%throwable</pattern> <!-- Log Format-->
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/sca_logger-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+
+    <root level="info"> <!-- Log Level -->
+        <appender-ref ref="CONSOLE" /> <!-- Logs for the console -->
+        <appender-ref ref="FILE" /> <!-- Logs for the file -->
+    </root>
+
+</configuration>
