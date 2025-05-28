@@ -27,16 +27,15 @@ the [EUDI Wallet Reference Implementation project description](https://github.co
 
 ## Overview
 
-This is a REST API server that implements the wallet-driven SCA for the remote Qualified Electronic Signature component of the EUDI Wallet.
-The SCA provides endpoints that allow to calculate the hash value of a document and obtain the signed document given the signature value.
+This project provides a REST API server implementing the Wallet-driven SCA component of the remote Qualified Electronic Signature for the EUDI Wallet.
+The SCA exposes endpoints that allow to calculate the hash value of a document and obtain the signed document given the signature value.
 
-Currently, the server is running at "https://walletcentric.signer.eudiw.dev", but you can [deploy](#deployment) it in your environment.
-
+Currently, the server is running at "https://walletcentric.signer.eudiw.dev", but you can [deploy it locally](#deployment) or use the [Docker-based deployment](#docker-deployment) method.
 
 The Wallet Centric rQES Specification can be found [here](docs/rqes-walledriven.md).
 
 This server can be used with the servers from [eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java](https://github.com/eu-digital-identity-wallet/eudi-srv-web-walletdriven-rpcentric-signer-qtsp-java)
-to deploy a remote Qualified Electronic Signature (rQES) component, as described in the previous specification.
+to build a remote Qualified Electronic Signature (rQES) component, as described in the previous specification.
 
 ## Disclaimer
 
@@ -147,15 +146,13 @@ The endpoint returns a JSON object with the following attributes:
 
 ## Deployment
 
-### Requirements
-* Java version 17
-* Apache Maven 3.6.3
+1. **Prerequisites**
+   * Java 17
+   * Apache Maven 3.6.3
 
-### Signature Creation Application
+2. **Configure the Timestamp Authority**
 
-1. **Add the Timestamp Authority Information**
-
-   For certain conformance levels, access to a Timestamp Authority is required.
+   For certain conformance levels, integration with a Timestamp Authority is required.
    The Timestamp Authority to be used can be specified in the **application.yml** file located in the folder **src/main/resources/application.yml**.
        
     ```
@@ -166,12 +163,45 @@ The endpoint returns a JSON object with the following attributes:
         - Example: "2.16.840.1.101.3.4.2.1"
    ```
 
-2. **Run the Resource Server**
+3. **Run the Resource Server**
    
     After configuring the previously mentioned settings, navigate to the **tools** directory and run the script:
    ```
    ./deploy_sca.sh
    ```
+
+## Docker Deployment
+
+The project can also be deployed through Docker. 
+
+1. **Prerequisites**
+    * Docker 
+
+2. **Configure the Timestamp Authority**
+
+   Same as above, update the **application.yml** file located in the folder **src/main/resources**.
+   
+    ```
+    timestamp-authority:
+        filename: # the path to the certificate of the Timestamp Authority chosen
+        server-url: # the url of the Timestamp Authority
+        supported-digest-algorithm: # the list of the digest algorithms that are supported by the TSA.
+        - Example: "2.16.840.1.101.3.4.2.1"
+   ```
+   
+3. **Set TSA Certificate Path in Dockerfile**
+   
+   By default, the Dockerfile expects the TSA certificate to be located at:
+   ```src/main/resources/TSA_CC.pem```
+   If your TSA certificate uses a different path or filename, make sure to update the Dockerfile accordingly, by updating this line:
+   ```COPY src/main/resources/TSA_CC.pem src/main/resources/TSA_CC.pem```
+   Adjust the source and destination paths to match your file location and name.
+   
+4. **Build and Run with Docker**
+
+   From the project root, run:
+    ```docker compose up --build```
+
 
 ## How to contribute
 
