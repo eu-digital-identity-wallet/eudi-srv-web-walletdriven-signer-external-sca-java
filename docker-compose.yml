@@ -1,5 +1,5 @@
 services:
-  sca_external:
+  wallet_driven_sca:
     build:
       context: .
       dockerfile: Dockerfile

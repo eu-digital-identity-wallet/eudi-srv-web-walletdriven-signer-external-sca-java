@@ -26,22 +26,28 @@
 
     <!-- Set the appender for the log file -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOGS}/sca_logger.log</file> <!-- Location and name of log file -->
+        <file>${LOGS}/walletdriven_sca_logger.log</file> <!-- Location and name of log file -->
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%method:%line %logger{36}: - %msg%n%throwable</pattern> <!-- Log Format-->
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOGS}/archived/sca_logger-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>10MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
+            <fileNamePattern>${LOGS}/archived/walletdriven_sca_logger-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
         </rollingPolicy>
     </appender>
 
-    <root level="info"> <!-- Log Level -->
-        <appender-ref ref="CONSOLE" /> <!-- Logs for the console -->
-        <appender-ref ref="FILE" /> <!-- Logs for the file -->
-    </root>
+    <springProfile name="dev">
+        <logger name="com.example" level="INFO"/>
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+    <springProfile name="!dev">
+        <logger name="com.example" level="DEBUG"/>
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 
 </configuration>
