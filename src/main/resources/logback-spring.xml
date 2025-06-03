@@ -37,15 +37,22 @@
         </rollingPolicy>
     </appender>
 
+    <springProfile name="docker">
+        <logger name="com.example" level="INFO"/>
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
     <springProfile name="dev">
         <logger name="com.example" level="INFO"/>
         <root level="INFO">
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
-    <springProfile name="!dev">
-        <logger name="com.example" level="DEBUG"/>
-        <root level="DEBUG">
+    <springProfile name="!dev &amp; !docker">
+        <logger name="com.example" level="INFO"/>
+        <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>

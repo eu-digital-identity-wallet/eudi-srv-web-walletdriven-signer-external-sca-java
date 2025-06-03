@@ -16,7 +16,5 @@ WORKDIR /opt/app
 # Start authorization_server
 COPY --from=builder /opt/app/target/*.jar sca.jar
 
-# Change the path of the TSA Certificate if required
-COPY src/main/resources/TSA_CC.pem src/main/resources/TSA_CC.pem
 EXPOSE 8086
 ENTRYPOINT ["java", "-jar", "sca.jar"]

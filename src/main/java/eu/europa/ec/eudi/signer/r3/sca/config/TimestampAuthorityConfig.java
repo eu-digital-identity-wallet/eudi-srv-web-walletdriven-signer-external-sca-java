@@ -22,16 +22,16 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "timestamp-authority")
 public class TimestampAuthorityConfig {
-	private String filename;
+	private String certificatePath;
 	private String serverUrl;
 	private List<String> supportedDigestAlgorithm;
 
-	public String getFilename() {
-		return filename;
+	public String getCertificatePath() {
+		return certificatePath;
 	}
 
-	public void setFilename(String filename) {
-		this.filename = filename;
+	public void setCertificatePath(String certificatePath) {
+		this.certificatePath = certificatePath;
 	}
 
 	public String getServerUrl() {

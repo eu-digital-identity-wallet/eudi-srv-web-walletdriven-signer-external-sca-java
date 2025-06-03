@@ -34,7 +34,7 @@ public class CredentialsService {
 
     public CredentialsService(@Autowired TimestampAuthorityConfig timestampAuthorityConfig) throws Exception{
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        String certificateStringPath = timestampAuthorityConfig.getFilename();
+        String certificateStringPath = timestampAuthorityConfig.getCertificatePath();
         if (certificateStringPath == null || certificateStringPath.isEmpty()) {
             throw new Exception("Trusted Certificate Path not found in configuration file.");
         }
