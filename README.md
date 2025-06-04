@@ -165,9 +165,9 @@ You can configure the TSA in two ways:
 
 Define the environment variables:
 
-- _TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH_
-- _TIMESTAMP_AUTHORITY_URL_
-- _TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS_
+- _TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH_: Filepath to the TSA certificate
+- _TIMESTAMP_AUTHORITY_URL_: TSA endpoint URL
+- _TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS_: # List of the digest algorithms supported by the TSA
 
 These can be added to a **.env** file at the root of the project. To enable .env loading, ensure the following lines are **uncommented** in _application.yml_:
 
@@ -223,7 +223,7 @@ To generate valid signed documents, the following TSA-related environment variab
 
 - _TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH_: Filepath to the TSA certificate
 - _TIMESTAMP_AUTHORITY_URL_: TSA endpoint URL
-- _TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS_: Supported digest algorithms
+- _TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS_: # List of the digest algorithms supported by the TSA
 
 These environment variables will need to be set up in a **.env** file presented next.
 
@@ -233,7 +233,7 @@ Create a **.env** file at the project root with the structure:
 
 ```
 SPRING_PROFILES_ACTIVE=docker
-TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH=# Path to the TSA certificate, ex: /certs/tsa.crt
+TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH=# Filepath to the TSA certificate, ex: /certs/tsa.crt
 TIMESTAMP_AUTHORITY_URL=# TSA URL, ex: https://tsa.example.com
 TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS=# Supported Digest Algorithm, ex: 2.16.840.1.101.3.4.2.1,2.16.840.1.101.3.4.2.3
 ```
@@ -277,7 +277,7 @@ ports:
     - "8086:8086" # Change first 8086 if the port is already used
 ```
 
-5. **Optional: Change logs configuration**
+### Optional: Configure Logging
 
 Log behavior is controlled by the _SPRING_PROFILES_ACTIVE_ variable:
 
@@ -287,7 +287,7 @@ Log behavior is controlled by the _SPRING_PROFILES_ACTIVE_ variable:
 
 If using a .env file as shown above, logs will be written both to the container console and a _logs_ directory.
 
-6. **Build and Run with Docker**
+### Build and Run with Docker
 
 From the project root, run:
 `docker compose up --build`
