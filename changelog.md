@@ -2,10 +2,14 @@
 
 ## [0.3.0]
 
-_13 Jan 2025_
+_28 May 2025_
 
 ### Added:
 - Visible representation of the PDF signature.
+- Docker support for the application:
+  - Added Dockerfile to build the application image.
+  - Added docker-compose.yml.
+  - Instructions for building and running the container added to README.md.
 
 ### Fixed:
 - Remove unused code.

@@ -15,6 +15,8 @@
 spring:
   application:
     name: sca
+  #config:
+  #  import: file:.env[.properties]
 
 server:
   port: 8086
@@ -22,13 +24,11 @@ server:
     include-message: always
 
 logging:
-  config: logback.xml
   level:
     org.hibernate: ERROR
     org.springframework.web: INFO
 
 timestamp-authority:
-  filename: "src/main/resources/TSA_CC.pem"
-  server-url: "http://ts.cartaodecidadao.pt/tsa/server"
-  supported-digest-algorithm:
-    - "2.16.840.1.101.3.4.2.1"
+  certificate-path: ${TIMESTAMP_AUTHORITY_CERTIFICATE_FILEPATH} # Filepath to the Timestamp Authority certificate
+  server-url: ${TIMESTAMP_AUTHORITY_URL} # Timestamp Authority URL
+  supported-digest-algorithm: ${TIMESTAMP_AUTHORITY_SUPPORTED_DIGEST_ALGS} # List of the digest algorithms supported by the Timestamp Authority

@@ -1,0 +1,12 @@
+services:
+  wallet_driven_sca:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wallet_driven_sca
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    volumes:
+      - {host_path_to_certificate}:{container_path_to_certificate}
