@@ -69,8 +69,7 @@ public class SignatureService {
             if (dataToBeSigned == null) continue;
 
             String dataToBeSignedStringEncoded = Base64.getEncoder().encodeToString(dataToBeSigned);
-            String dataToBeSignedURLEncoded = URLEncoder.encode(dataToBeSignedStringEncoded, StandardCharsets.UTF_8);
-            hashes.add(dataToBeSignedURLEncoded);
+            hashes.add(dataToBeSignedStringEncoded);
         }
 
         fileLogger.info("DataToBeSigned successfully created");
