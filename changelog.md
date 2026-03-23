@@ -1,8 +1,15 @@
 # Changelog
 
+## [0.4.0]
+
+_23 Mar 2026_
+
+### Changed:
+- Removed URL-encoding after document digest generation.
+
 ## [0.3.0]
 
-_28 May 2025_
+_1 Jul 2025_
 
 ### Added:
 - Visible representation of the PDF signature.
