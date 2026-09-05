@@ -182,7 +182,7 @@ public class DSSService {
      */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
     public byte[] getDigestOfDataToBeSigned(SignatureDocumentForm form) throws IOException {
-        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
+        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates(), form.isWrprcProfile());
 		logger.info("Session_id:{},DataToBeSignedData Service created.", RequestContextHolder.currentRequestAttributes().getSessionId());
 
         AbstractSignatureParameters parameters = fillParameters(form);
@@ -204,7 +204,7 @@ public class DSSService {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public DSSDocument signDocument(SignatureDocumentForm form) throws IOException {
-        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates());
+        DocumentSignatureService service = getSignatureService(form.getContainerType(), form.getSignatureForm(), form.getTrustedCertificates(), form.isWrprcProfile());
 		logger.trace("DocumentSignatureService created.");
 
         AbstractSignatureParameters parameters = fillParameters(form);
@@ -229,7 +229,7 @@ public class DSSService {
 
 
 	@SuppressWarnings("rawtypes")
-	private DocumentSignatureService getSignatureService(ASiCContainerType containerType, SignatureForm signatureForm, CommonTrustedCertificateSource trustedCertificates) {
+	private DocumentSignatureService getSignatureService(ASiCContainerType containerType, SignatureForm signatureForm, CommonTrustedCertificateSource trustedCertificates, boolean wrprcProfile) {
 
 		OnlineCRLSource onlineCRLSource = new OnlineCRLSource();
 		onlineCRLSource.setDataLoader(new CommonsDataLoader());
@@ -250,7 +250,7 @@ public class DSSService {
 				case CAdES -> new CAdESService(cv);
 				case PAdES -> new PAdESService(cv);
 				case XAdES -> new XAdESService(cv);
-				case JAdES -> new JAdESService(cv);
+				case JAdES -> wrprcProfile ? new WrprcJAdESService(cv) : new JAdESService(cv);
 				default -> throw new IllegalArgumentException(String.format("Unknown signature format : %s", signatureForm));
 			};
 		}
@@ -287,6 +287,9 @@ public class DSSService {
 	@SuppressWarnings({ "rawtypes" })
 	private AbstractSignatureParameters fillParameters(SignatureDocumentForm form) {
 		AbstractSignatureParameters parameters = getSignatureParameters(form.getContainerType(),  form.getSignatureForm(), form.getSignaturePackaging(), form.getDocumentToSign(), form.getDigestAlgorithm());
+        if (form.isWrprcProfile()) {
+            ((JAdESSignatureParameters) parameters).setJwsSerializationType(JWSSerializationType.COMPACT_SERIALIZATION);
+        }
 		fillParameters(parameters, form);
 
 		return parameters;

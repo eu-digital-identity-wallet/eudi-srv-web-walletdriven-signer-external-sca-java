@@ -43,6 +43,10 @@ public class SignatureDocumentForm {
     private List<X509Certificate> certChain;
     private EncryptionAlgorithm encryptionAlgorithm;
     private byte[] signatureValue;
+    private boolean wrprcProfile;
+
+    public boolean isWrprcProfile() { return wrprcProfile; }
+    public void setWrprcProfile(boolean wrprcProfile) { this.wrprcProfile = wrprcProfile; }
 
     public SignatureDocumentForm() {
     }
