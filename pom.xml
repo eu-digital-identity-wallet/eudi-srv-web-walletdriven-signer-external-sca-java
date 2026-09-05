@@ -29,6 +29,7 @@
 	<name>sca</name>
 	<properties>
 		<java.version>17</java.version>
+        <skipTests>true</skipTests>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -42,6 +43,13 @@
 		</dependencies>
 	</dependencyManagement>
 	<dependencies>
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+            <version>11.37.2</version>
+            <scope>test</scope>
+        </dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
@@ -55,6 +63,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin.external.google</groupId>
+                    <artifactId>android-json</artifactId>
+                </exclusion>
+            </exclusions>
 			<version>3.3.0</version>
 			<scope>test</scope>
 		</dependency>
@@ -156,7 +170,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M2</version>
                 <configuration>
-					<skipTests>true</skipTests>
+					<skipTests>${skipTests}</skipTests>
                 </configuration>
             </plugin>
 		</plugins>

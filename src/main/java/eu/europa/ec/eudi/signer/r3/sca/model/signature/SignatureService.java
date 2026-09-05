@@ -162,6 +162,7 @@ public class SignatureService {
         EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.forName(certificate.getPublicKey().getAlgorithm());
 
         SignatureDocumentForm signatureDocumentForm = new SignatureDocumentForm();
+        signatureDocumentForm.setWrprcProfile("WRPRC".equals(document.getJades_profile()));
         signatureDocumentForm.setDocumentToSign(dssDocument);
         signatureDocumentForm.setSignaturePackaging(signaturePackaging);
         signatureDocumentForm.setContainerType(asicContainerType);

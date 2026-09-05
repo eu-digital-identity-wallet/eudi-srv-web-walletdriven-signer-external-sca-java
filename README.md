@@ -322,3 +322,21 @@ limitations under the License.
 ```
 
 ```
+
+### Optional WRPRC signing headers
+
+To request a compact JAdES Baseline-B signature with `typ: rc-wrp+jwt`, include
+`"jades_profile": "WRPRC"` in each document in **both** `/signatures/calculate_hash`
+and `/signatures/obtain_signed_doc`. This option requires `signature_format: J`,
+`conformance_level: Ades-B-B`, `signed_envelope_property: ENVELOPING` and `container: No`.
+Other combinations or unknown profiles return HTTP 400.
+
+The profile uses a protected `iat` signing time (ETSI TS 119 182-1 V1.2.1), retains
+other critical headers, and includes the signing certificate first in `x5c`.
+Use the same document, options, certificate, digest algorithm and returned signing
+date for both steps. Omitting the profile preserves the existing signing behavior.
+This option shapes the signed envelope; it does not validate WRPRC payload claims
+or establish trust or wallet acceptance.
+
+Run the focused controller/service tests with Java 17:
+`mvn -DskipTests=false -Dtest=WrprcEndpointsTest test`.

@@ -43,6 +43,12 @@ public class DocumentsSignDocRequest {
     @Pattern(regexp = "No|ASiC-E|ASiC-S", message = "Invalid container value")
     private String container = "No";
 
+    // Optional header profile; omitted requests retain the existing JAdES behavior.
+    private String jades_profile;
+
+    public String getJades_profile() { return jades_profile; }
+    public void setJades_profile(String jades_profile) { this.jades_profile = jades_profile; }
+
     public String getDocument() {
         return document;
     }
@@ -134,6 +140,11 @@ public class DocumentsSignDocRequest {
     }
 
     public void isValid() throws Exception{
+        if (jades_profile != null && (!"WRPRC".equals(jades_profile)
+                || !"J".equals(signature_format) || !"Ades-B-B".equals(conformance_level)
+                || !"ENVELOPING".equals(signed_envelope_property) || !"No".equals(container))) {
+            throw new Exception("jades_profile supports only WRPRC with J, Ades-B-B, ENVELOPING and No container.");
+        }
         if(!checkSignatureFormat())
             throw new Exception("The signature format is invalid.");
         if(!checkConformanceLevel())
