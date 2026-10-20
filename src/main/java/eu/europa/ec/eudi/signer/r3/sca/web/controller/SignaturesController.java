@@ -16,27 +16,11 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignatureCountMismatchException;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
-import eu.europa.ec.eudi.signer.r3.sca.model.signature.SignatureService;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequest;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
-
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +28,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignatureCountMismatchException;
+import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
+import eu.europa.ec.eudi.signer.r3.sca.model.signature.SignatureService;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.SignedDocumentRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash.CalculateHashResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping(value = "/signatures")

@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

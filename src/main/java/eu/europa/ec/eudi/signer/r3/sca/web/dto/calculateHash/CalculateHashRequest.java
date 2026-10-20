@@ -16,15 +16,15 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Schema(description = "JSON Object containing the information to retrieve base64-encoded hashes values to be signed.")
 public class CalculateHashRequest {

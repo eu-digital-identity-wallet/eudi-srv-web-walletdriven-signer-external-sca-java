@@ -16,11 +16,11 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc;
 
+import java.util.List;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-
-import java.util.List;
 
 public class DocumentsSignDocRequest {
     @Schema(description = "A base64-encoded document.", required = true)

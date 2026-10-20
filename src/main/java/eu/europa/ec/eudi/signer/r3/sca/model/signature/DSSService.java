@@ -16,57 +16,16 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.model.signature;
 
-import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignDocParameterInvalidException;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.UnsupportedSignatureFormatException;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
-import eu.europa.esig.dss.signature.AbstractSignatureParameters;
-import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
-import eu.europa.esig.dss.alert.LogOnStatusAlert;
-import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
-import eu.europa.esig.dss.asic.cades.ASiCWithCAdESTimestampParameters;
-import eu.europa.esig.dss.asic.cades.signature.ASiCWithCAdESService;
-import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
-import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
-import eu.europa.esig.dss.cades.CAdESSignatureParameters;
-import eu.europa.esig.dss.cades.signature.CAdESService;
-import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
-import eu.europa.esig.dss.enumerations.*;
-import eu.europa.esig.dss.model.*;
-import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.pades.*;
-import eu.europa.esig.dss.pdf.pdfbox.PdfBoxNativeObjectFactory;
-import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
-import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.xades.XAdESSignatureParameters;
-import eu.europa.esig.dss.xades.XAdESTimestampParameters;
-import eu.europa.esig.dss.xades.signature.XAdESService;
-import eu.europa.esig.dss.jades.JAdESSignatureParameters;
-import eu.europa.esig.dss.jades.JAdESTimestampParameters;
-import eu.europa.esig.dss.jades.signature.JAdESService;
-import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.service.SecureRandomNonceSource;
-import eu.europa.esig.dss.service.crl.OnlineCRLSource;
-import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
-import eu.europa.esig.dss.service.http.commons.OCSPDataLoader;
-import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
-import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
-import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.signature.DocumentSignatureService;
-import eu.europa.esig.dss.signature.MultipleDocumentsSignatureService;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
-import eu.europa.esig.dss.spi.validation.CertificateVerifier;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import eu.europa.esig.dss.spi.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
-import eu.europa.esig.dss.spi.validation.RevocationDataVerifier;
-
-import java.awt.*;
+import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Base64;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -82,6 +41,75 @@ import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
+
+import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignDocParameterInvalidException;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.UnsupportedSignatureFormatException;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import eu.europa.esig.dss.alert.ExceptionOnStatusAlert;
+import eu.europa.esig.dss.alert.LogOnStatusAlert;
+import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
+import eu.europa.esig.dss.asic.cades.ASiCWithCAdESTimestampParameters;
+import eu.europa.esig.dss.asic.cades.signature.ASiCWithCAdESService;
+import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
+import eu.europa.esig.dss.asic.xades.signature.ASiCWithXAdESService;
+import eu.europa.esig.dss.cades.CAdESSignatureParameters;
+import eu.europa.esig.dss.cades.signature.CAdESService;
+import eu.europa.esig.dss.cades.signature.CAdESTimestampParameters;
+import eu.europa.esig.dss.enumerations.ASiCContainerType;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.EncryptionAlgorithm;
+import eu.europa.esig.dss.enumerations.ImageScaling;
+import eu.europa.esig.dss.enumerations.JWSSerializationType;
+import eu.europa.esig.dss.enumerations.SigDMechanism;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureForm;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.enumerations.SignaturePackaging;
+import eu.europa.esig.dss.enumerations.SignerTextHorizontalAlignment;
+import eu.europa.esig.dss.enumerations.SignerTextPosition;
+import eu.europa.esig.dss.enumerations.SignerTextVerticalAlignment;
+import eu.europa.esig.dss.enumerations.TextWrapping;
+import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentHorizontal;
+import eu.europa.esig.dss.enumerations.VisualSignatureAlignmentVertical;
+import eu.europa.esig.dss.enumerations.VisualSignatureRotation;
+import eu.europa.esig.dss.jades.JAdESSignatureParameters;
+import eu.europa.esig.dss.jades.JAdESTimestampParameters;
+import eu.europa.esig.dss.jades.signature.JAdESService;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.TimestampParameters;
+import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.pades.DSSFont;
+import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.PAdESTimestampParameters;
+import eu.europa.esig.dss.pades.SignatureFieldParameters;
+import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxNativeObjectFactory;
+import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
+import eu.europa.esig.dss.service.SecureRandomNonceSource;
+import eu.europa.esig.dss.service.crl.OnlineCRLSource;
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
+import eu.europa.esig.dss.service.http.commons.OCSPDataLoader;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
+import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.signature.AbstractSignatureParameters;
+import eu.europa.esig.dss.signature.DocumentSignatureService;
+import eu.europa.esig.dss.signature.MultipleDocumentsSignatureService;
+import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.validation.OCSPFirstRevocationDataLoadingStrategyFactory;
+import eu.europa.esig.dss.spi.validation.RevocationDataVerifier;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.xades.XAdESSignatureParameters;
+import eu.europa.esig.dss.xades.XAdESTimestampParameters;
+import eu.europa.esig.dss.xades.signature.XAdESService;
 
 @Service
 public class DSSService {
@@ -359,26 +387,23 @@ public class DSSService {
 			return getASiCSignatureParameters(containerType, signatureForm);
 
 		switch (signatureForm) {
-			case CAdES:
-				parameters = new CAdESSignatureParameters();
-				break;
-			case PAdES:
-				PAdESSignatureParameters padesParams = new PAdESSignatureParameters();
-				padesParams.setContentSize(9472 * 2); // double reserved space for signature
-				parameters = padesParams;
-				break;
-			case XAdES:
-				parameters = new XAdESSignatureParameters();
-				break;
-			case JAdES:
-				JAdESSignatureParameters jadesParameters = new JAdESSignatureParameters();
-				jadesParameters.setJwsSerializationType(JWSSerializationType.JSON_SERIALIZATION);
-				jadesParameters.setSigDMechanism(SigDMechanism.OBJECT_ID_BY_URI_HASH); // to use by default
-				parameters = jadesParameters;
-				break;
-			default:
-				logger.error("Unknown signature format : {}", signatureForm);
-				throw new UnsupportedSignatureFormatException(String.format("Unknown signature format : %s", signatureForm));
+			case CAdES -> parameters = new CAdESSignatureParameters();
+			case PAdES -> {
+                            PAdESSignatureParameters padesParams = new PAdESSignatureParameters();
+                            padesParams.setContentSize(9472 * 2); // double reserved space for signature
+                            parameters = padesParams;
+            }
+			case XAdES -> parameters = new XAdESSignatureParameters();
+			case JAdES -> {
+                            JAdESSignatureParameters jadesParameters = new JAdESSignatureParameters();
+                            jadesParameters.setJwsSerializationType(JWSSerializationType.JSON_SERIALIZATION);
+                            jadesParameters.setSigDMechanism(SigDMechanism.OBJECT_ID_BY_URI_HASH); // to use by default
+                            parameters = jadesParameters;
+            }
+			default -> {
+                            logger.error("Unknown signature format : {}", signatureForm);
+                            throw new UnsupportedSignatureFormatException(String.format("Unknown signature format : %s", signatureForm));
+            }
 		}
 
 		return parameters;
@@ -388,20 +413,21 @@ public class DSSService {
 	private AbstractSignatureParameters getASiCSignatureParameters(ASiCContainerType containerType, SignatureForm signatureForm) throws UnsupportedSignatureFormatException {
 		AbstractSignatureParameters parameters;
 		switch (signatureForm) {
-			case CAdES:
-				ASiCWithCAdESSignatureParameters asicCadesParams = new ASiCWithCAdESSignatureParameters();
-				asicCadesParams.aSiC().setContainerType(containerType);
-				parameters = asicCadesParams;
-				break;
-			case XAdES:
-				ASiCWithXAdESSignatureParameters asicXadesParams = new ASiCWithXAdESSignatureParameters();
-				asicXadesParams.aSiC().setContainerType(containerType);
-				parameters = asicXadesParams;
-				break;
-			default:
-				logger.error(String.format("Signature format selected for an ASiC container (%s) is not supported", signatureForm));
-				throw new UnsupportedSignatureFormatException(
-					  String.format("Signature format selected for an ASiC container (%s) is not supported", signatureForm));
+			case CAdES -> {
+                            ASiCWithCAdESSignatureParameters asicCadesParams = new ASiCWithCAdESSignatureParameters();
+                            asicCadesParams.aSiC().setContainerType(containerType);
+                            parameters = asicCadesParams;
+            }
+			case XAdES -> {
+                            ASiCWithXAdESSignatureParameters asicXadesParams = new ASiCWithXAdESSignatureParameters();
+                            asicXadesParams.aSiC().setContainerType(containerType);
+                            parameters = asicXadesParams;
+            }
+			default -> {
+                            logger.error(String.format("Signature format selected for an ASiC container (%s) is not supported", signatureForm));
+                            throw new UnsupportedSignatureFormatException(
+                                    String.format("Signature format selected for an ASiC container (%s) is not supported", signatureForm));
+            }
 		}
 		return parameters;
 	}
@@ -457,18 +483,17 @@ public class DSSService {
 
 		} else {
 			switch (signatureForm) {
-				case CAdES:
-					ASiCWithCAdESTimestampParameters asicParameters = new ASiCWithCAdESTimestampParameters();
-					asicParameters.aSiC().setContainerType(containerType);
-					parameters = asicParameters;
-					break;
-				case XAdES:
-					parameters = new XAdESTimestampParameters();
-					break;
-				default:
-					logger.error(String.format("Signature format selected for an ASiC time-stamp (%s) is not supported.", signatureForm));
-					throw new UnsupportedSignatureFormatException(
-						  String.format("Signature format selected for an ASiC time-stamp (%s) is not supported.", signatureForm));
+				case CAdES -> {
+                                    ASiCWithCAdESTimestampParameters asicParameters = new ASiCWithCAdESTimestampParameters();
+                                    asicParameters.aSiC().setContainerType(containerType);
+                                    parameters = asicParameters;
+                        }
+				case XAdES -> parameters = new XAdESTimestampParameters();
+				default -> {
+                                    logger.error(String.format("Signature format selected for an ASiC time-stamp (%s) is not supported.", signatureForm));
+                                    throw new UnsupportedSignatureFormatException(
+                                            String.format("Signature format selected for an ASiC time-stamp (%s) is not supported.", signatureForm));
+                        }
 			}
 		}
 		return parameters;

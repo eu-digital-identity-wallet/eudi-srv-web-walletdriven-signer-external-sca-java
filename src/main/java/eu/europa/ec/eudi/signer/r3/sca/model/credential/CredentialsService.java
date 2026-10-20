@@ -16,16 +16,6 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.model.credential;
 
-import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.CertificateBase64DecodingException;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.MisconfigurationException;
-import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,6 +24,17 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.CertificateBase64DecodingException;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.MisconfigurationException;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 
 @Service
 public class CredentialsService {

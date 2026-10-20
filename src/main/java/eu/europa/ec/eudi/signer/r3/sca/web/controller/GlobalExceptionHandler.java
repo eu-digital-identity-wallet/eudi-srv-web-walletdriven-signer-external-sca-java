@@ -16,15 +16,16 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.controller;
 
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

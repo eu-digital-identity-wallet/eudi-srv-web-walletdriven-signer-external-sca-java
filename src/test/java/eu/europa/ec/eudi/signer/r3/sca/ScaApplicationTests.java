@@ -16,10 +16,11 @@
 
 package eu.europa.ec.eudi.signer.r3.sca;
 
-import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import eu.europa.ec.eudi.signer.r3.sca.model.credential.CredentialsService;
 
 @SpringBootTest(
 	  properties = {

@@ -16,29 +16,30 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.model.signature;
 
-import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignDocParameterInvalidException;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.HashAlgorithmOIDInvalidException;
-import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.UnsupportedSignatureFormatException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.ValidationInfoSignDocResponse;
-import eu.europa.esig.dss.enumerations.*;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
-import java.util.*;
+import eu.europa.ec.eudi.signer.r3.sca.config.TimestampAuthorityConfig;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.DocumentSignDocParameterInvalidException;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.HashAlgorithmOIDInvalidException;
+import eu.europa.ec.eudi.signer.r3.sca.exception.ExternalSCAException.UnsupportedSignatureFormatException;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.SignaturesSignDocResponse;
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.ValidationInfoSignDocResponse;
+import eu.europa.esig.dss.enumerations.MimeType;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 
 @Service
 public class SignatureService {
