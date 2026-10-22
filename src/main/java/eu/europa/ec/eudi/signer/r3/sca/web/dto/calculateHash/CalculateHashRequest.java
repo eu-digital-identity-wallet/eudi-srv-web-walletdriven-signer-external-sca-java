@@ -16,19 +16,30 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash;
 
-import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
-import jakarta.validation.constraints.NotBlank;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc.DocumentsSignDocRequest;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
+@Schema(description = "JSON Object containing the information to retrieve base64-encoded hashes values to be signed.")
 public class CalculateHashRequest {
-	@NotBlank(message = "At least one document must be present in the request.")
+	@Schema(description = "An array of JSON Objects containing base64-encoded documents and further parameters.", required = true)
+	@NotEmpty(message = "At least one document to be signed must be sent in the request.")
+	@NotNull(message = "Missing required parameter: documents")
+	@Valid
 	private List<DocumentsSignDocRequest> documents;
-	@NotBlank(message = "The certificate must be present.")
+	@Schema(description = "The base64-encoded end entity certificate of the signer of the document.", required = true)
+	@NotBlank(message = "Missing required parameter: endEntityCertificate")
 	private String endEntityCertificate;
+	@Schema(description = "The base64-encoded certificate chain of the end entity certificate.")
 	private List<String> certificateChain = new ArrayList<>();
-	@NotBlank(message = "The hashAlgorithmOID must be present.")
+	@Schema(description = "The OID of the algorithm to be used to calculate the hash value(s).", required = true)
+	@NotBlank(message = "Missing required parameter: hashAlgorithmOID")
 	private String hashAlgorithmOID;
 
 	public List<DocumentsSignDocRequest> getDocuments() {

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0]
+
+_06 Oct 2026_
+
+### Added:
+- Unit tests to verify that SCA endpoints correctly validate incoming requests.
+
+### Changed:
+- Enhanced Swagger documentation for better API clarity.
+- Improve exceptions to improve traceability.
+- Upgraded logging for more detailed diagnostic information.
+- Update Maven dependencies versions.
+- Updated Docker Java and Maven images version.
+
 ## [0.4.0]
 
 _23 Mar 2026_

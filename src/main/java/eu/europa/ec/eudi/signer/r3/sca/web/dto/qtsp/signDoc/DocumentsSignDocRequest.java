@@ -16,30 +16,33 @@
 
 package eu.europa.ec.eudi.signer.r3.sca.web.dto.qtsp.signDoc;
 
+import java.util.List;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-import java.util.List;
-
 public class DocumentsSignDocRequest {
+    @Schema(description = "A base64-encoded document.", required = true)
     @NotBlank(message = "The document must be present in the request")
     private String document;
-
+    @Schema(description = "The name of the document to be signed.")
     private String document_name;
-
+    @Schema(description = "The digital signature format to use when signing the document.", required = true)
     @NotBlank(message = "Signature format cannot be blank")
     @Pattern(regexp = "P|C|X|J", message = "Invalid signature format")
     private String signature_format = null;
-
+    @Schema(description = "The signature conformance level. The default level is AdES-B-B.", required = true)
     @Pattern(regexp = "Ades-B-B|Ades-B-T|Ades-B-LT|Ades-B-LTA|Ades-B|Ades-T|Ades-LT|Ades-LTA",
           message = "Invalid conformance level")
     private String conformance_level = "AdES-B-B";
+    @Schema(description = "List of signed attributes.")
     private List<AttributeSignDocRequest> signed_props;
-
+    @Schema(description = "The property concerning the signed envelope.", required = true)
     @Pattern(regexp = "ENVELOPED|ENVELOPING|DETACHED|INTERNALLY_DETACHED",
           message = "Invalid signed envelope property")
     private String signed_envelope_property;
-
+    @Schema(description = "Specifies the signature container type. The default container is 'No'")
     @Pattern(regexp = "No|ASiC-E|ASiC-S", message = "Invalid container value")
     private String container = "No";
 
@@ -99,49 +102,5 @@ public class DocumentsSignDocRequest {
         this.container = container;
     }
 
-    /**
-     * Checks if a given signature format is valid.
-     * The supported signature format are "P", "C", "X", "J"
-     * @return true if is valid otherwise returns false
-     */
-    public boolean checkSignatureFormat(){
-        return signature_format.equals("P") || signature_format.equals("X") ||
-              signature_format.equals("J") || signature_format.equals("C");
-    }
-
-    /**
-     * Checks if a given conformance level is valid.
-     * @return true if is valid otherwise returns false
-     */
-    public boolean checkConformanceLevel(){
-        return conformance_level.equals("Ades-B-B") ||
-              conformance_level.equals("Ades-B-T") ||
-              conformance_level.equals("Ades-B-LT") ||
-              conformance_level.equals("Ades-B-LTA") ||
-              conformance_level.equals("Ades-B") ||
-              conformance_level.equals("Ades-T") ||
-              conformance_level.equals("Ades-LT") ||
-              conformance_level.equals("Ades-LTA");
-    }
-
-    public boolean checkSignedEnvelopeProperty(){
-        return signed_envelope_property.equals("ENVELOPED") || signed_envelope_property.equals("ENVELOPING") ||
-              signed_envelope_property.equals("DETACHED") || signed_envelope_property.equals("INTERNALLY_DETACHED");
-    }
-
-    public boolean checkContainer(){
-        return container.equals("No") || container.equals("ASiC-E") || container.equals("ASiC-S");
-    }
-
-    public void isValid() throws Exception{
-        if(!checkSignatureFormat())
-            throw new Exception("The signature format is invalid.");
-        if(!checkConformanceLevel())
-            throw new Exception("The conformance level is invalid.");
-        if(!checkSignedEnvelopeProperty())
-            throw new Exception("The signed envelope property is invalid.");
-        if(!checkContainer())
-            throw new Exception("The container is invalid.");
-    }
 
 }

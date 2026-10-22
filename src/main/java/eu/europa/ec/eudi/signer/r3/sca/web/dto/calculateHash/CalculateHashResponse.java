@@ -18,8 +18,13 @@ package eu.europa.ec.eudi.signer.r3.sca.web.dto.calculateHash;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "JSON Object containing base64-encoded hashes values to be signed.")
 public class CalculateHashResponse {
+	@Schema(description = "One or more base64-encoded digest values of data to be signed.")
 	private List<String> hashes;
+	@Schema(description = "The number of milliseconds since January 1, 1970, 00:00:00 GMT represented by date of when the hash(es) where obtained.")
 	private long signature_date;
 
 	public CalculateHashResponse(List<String> hashes, long signature_date) {

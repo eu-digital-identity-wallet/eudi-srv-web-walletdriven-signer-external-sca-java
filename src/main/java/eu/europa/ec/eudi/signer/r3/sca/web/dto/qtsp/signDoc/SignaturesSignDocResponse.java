@@ -20,11 +20,17 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "JSON Object containing base64-encoded signed documents or base64-encoded signature objects.")
 public class SignaturesSignDocResponse {
+    @Schema(description = "One or more Base64-encoded signatures enveloped within the documents.")
     private List<String> documentWithSignature;
+    @Schema(description = "One or more base64-encoded signatures detached from the documents")
     private List<String> signatureObject;
     private String responseID;
+    @Schema(description = "JSON Object containing validation data")
     private ValidationInfoSignDocResponse validationInfo;
 
     public SignaturesSignDocResponse() {
@@ -79,7 +85,7 @@ public class SignaturesSignDocResponse {
         return "SignaturesSignDocResponse{" +
                 "documentWithSignature=" + documentWithSignature +
                 ", signatureObject=" + signatureObject +
-                ", responseID='" + responseID + '\'' +
+                ", responseID='" + responseID +
                 ", validationInfo=" + validationInfo.toString() +
                 '}';
     }
